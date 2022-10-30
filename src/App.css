@@ -1,0 +1,82 @@
+.App {
+    text-align: left;
+    font-size: calc(14px + 2vmin);
+}
+
+.App-logo {
+    height: 10vmin;
+    pointer-events: none;
+}
+
+span.MuiTypography-body2 {
+    background-color: white
+}
+
+div.MuiTabs-vertical {
+    min-width: 150px;
+}
+
+main {
+    width: 333px
+}
+
+
+/* @media (prefers-reduced-motion: no-preference) {
+    .App-logo {
+        animation: App-logo-spin infinite 20s linear;
+    }
+} */
+
+
+/* .App-header {
+    background-color: #282c34;
+    min-height: 500vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: calc(10px + 2vmin);
+    color: white;
+} */
+
+.App-link {
+    color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(0deg);
+    }
+}
+
+.MuiToolbar-regular {
+    background-color: black;
+}
+
+
+/* .panelTop {
+    width: 100%
+}
+ */
+
+.topOfPanel {
+    background-color: white;
+}
+
+.topBarContainer {
+    display: flex;
+}
+
+span.barleft {
+    background-color: black;
+    flex: 1
+}
+
+span.NetStatus {
+    font-size: calc(10px);
+    background-color: black;
+    margin-left: auto
+}
