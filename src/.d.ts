@@ -3,3 +3,7 @@ declare module '*.txt' {
     export default content;
   }
 
+
+declare module 'preval.macro';
+
+

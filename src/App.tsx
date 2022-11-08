@@ -19,12 +19,17 @@ import MenuIcon from '@mui/icons-material/Menu';
 import { HomePage } from './HomePage'
 import { AccessTokenPage } from './AccessTokenPage'
 import { NetStatus } from './NetStatus'
+import { Devices } from './Devices'
+import * as saved from './SavedStuff'
 
 import * as mqtt from "./MqttClient"
+import * as more from "./MoreStuff"
 
 import Link from '@mui/material/Link';
 
 import Toolbar from '@mui/material/Toolbar';
+
+
 
 (window as any).global = window;
 // @ts-ignore
@@ -93,9 +98,11 @@ const drawerWidth = 150;
 
 export function VerticalTabs() {
 
-  console.log("startingState", window.location.pathname)
-  var starting = 0
+  // console.log("starting with path", window.location.pathname) is '/'
 
+  var starting = saved.getTabState()
+
+  // do we need this?
   if (window.location.pathname === '/token') {
     starting = 1
   }
@@ -112,6 +119,7 @@ export function VerticalTabs() {
   const [value, setValue] = React.useState(starting);
 
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
+    saved.setTabState(newValue)
     setValue(newValue);
   };
 
@@ -151,22 +159,19 @@ export function VerticalTabs() {
       text = "About mqtt5nano"
     }
     if (value === 3) {
-      text = "devices"
+      text = "Devices"
     }
     if (value === 4) {
       text = "more coming"
     }
 
     return (
-
       <span className='barleft'>{text}</span>
-
     )
   }
-  //className = "NetStatus"
 
   const devicesUrl = "/devices"
-  console.log("devicesUrl", devicesUrl)
+  // console.log("devicesUrl", devicesUrl)
 
   const panels = (
     <>
@@ -194,10 +199,10 @@ export function VerticalTabs() {
         </>
       </TabPanel>
       <TabPanel value={value} index={3}>
-        device panels here.
+        <Devices />
       </TabPanel>
       <TabPanel value={value} index={4}>
-        more tbd.
+        <more.MoreStuff/>
       </TabPanel>
     </>
   )
@@ -208,10 +213,32 @@ export function VerticalTabs() {
     setMobileOpen(!mobileOpen);
   };
 
+  function getHelpUrl() :string
+  {
+
+    var text = "none"
+    if (value === 0) { // about knotfree
+      text = "https://github.com/awootton/knotfreeiot/wiki"
+    }
+    if (value === 1) { // Access Token
+      text = "https://github.com/awootton/knotfreeiot/wiki/The-Access-Token-UI"
+    }
+    if (value === 2) { // About mqtt5nano
+      text = "https://github.com/awootton/mqtt5nano"
+    }
+    if (value === 3) { // devices
+      text = "https://github.com/awootton/knotfree-net-homepage/wiki/Devices"
+    }
+    if (value === 4) { // misc
+      text = "https://github.com/awootton/knotfree-net-homepage/wiki/Devices"
+    }
+    return text
+  }
+
   const container = window !== undefined ? () => window.document.body : undefined;
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box className='surroundingBox' sx={{ display: 'flex' }}>
       {/* <CssBaseline /> */}
       <AppBar
         position="fixed"
@@ -220,9 +247,8 @@ export function VerticalTabs() {
           ml: { sm: `${drawerWidth}px` },
         }}
       >
-        <Toolbar>
+        <Toolbar className="topBarContainer">
           <IconButton
-            className="topBarContainer"
             color="inherit"
             aria-label="open drawer"
             edge="start"
@@ -231,14 +257,12 @@ export function VerticalTabs() {
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="div" className="topBarContainer">
-
-            <MyToolbarText />   </Typography>
-
-          {/* <span className='NetStatus'>No connection. No token.</span> */}
+         
+            <MyToolbarText />
+           
+          <span className= 'help'><Link href={getHelpUrl()}>Help</Link></span>
+            
           <NetStatus />
-
-
         </Toolbar>
       </AppBar>
       <Box
@@ -278,9 +302,8 @@ export function VerticalTabs() {
         // sx={{ flexGrow: 1, p: 3, width: { sm: `calc(100% - ${drawerWidth}px)` } }}
         sx={{
           flexGrow: 1,
-          p: 3,
+          p: 2,
           // width: { sm: `calc(100% - ${drawerWidth}px)` }, move to css
-
         }}
       >
         <Toolbar className="topOfPanel" />
@@ -289,22 +312,6 @@ export function VerticalTabs() {
     </Box>
   )
 
-  //   component="main" 
-  //   width: { sm: `calc(100% - ${drawerWidth}px)` },
-
-  // return (
-  //   <>
-
-  //   <Box
-  //     sx={{ flexGrow: 1, bgcolor: 'background.paper', display: 'flex', height: 224 }}
-  //   >
-  //     {tabs}
-  //     {panels}
-
-  //     </Box>
-  //   </>
-
-  // );
 }
 
 

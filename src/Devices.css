@@ -1,0 +1,30 @@
+.container {
+    flex-grow: 1;
+    flex-direction: column;
+    border: 10px;
+}
+
+.title {
+    display: flex;
+    flex-direction: row;
+    font-size: x-large;
+}
+
+.adminSpan {
+    flex: 1;
+}
+
+.adminText {
+    min-width: 384px;
+}
+
+.plus {
+    font-size: x-large;
+    width: 48px;
+    height: 48px;
+}
+
+
+/* .add {}
+
+.body {} */

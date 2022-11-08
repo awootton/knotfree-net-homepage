@@ -20,6 +20,7 @@
         "fast-sha256": "^1.3.0",
         "mqtt": "^4.3.7",
         "precompiled-mqtt": "^4.3.14-beta",
+        "preval.macro": "^5.0.0",
         "react": "^18.2.0",
         "react-copy-to-clipboard": "^5.1.0",
         "react-dom": "^18.2.0",

@@ -2,7 +2,7 @@
 
 import React, { FC, ReactElement, useEffect } from 'react'
 
-
+import * as registry from './ChangeRegistry'
 
 type State = {
     text: string
@@ -15,16 +15,16 @@ const defaultState: State = {
 type Props = {
 }
 
-var latestCallback = (text: string) => {
-    console.log("NetStatus override me ")
-}
+// var latestCallback = (text: string) => {
+//     console.log("NetStatus override me ")
+// }
 
 //var incomingText: string = ""
-export function SetNetStatus(text: string) {
-    console.log("setting text ", text)
-    // incomingText = text
-    setTimeout(() => { latestCallback(text) }, 10)
-}
+// export function SetNetStatus(text: string) {
+//     console.log("setting text ", text)
+//     // incomingText = text
+//     setTimeout(() => { latestCallback(text) }, 10)
+// }
 
 
 // const interval = setInterval(()=>{
@@ -39,16 +39,18 @@ export const NetStatus: FC<Props> = (props: Props): ReactElement => {
     const [state, setState] = React.useState(defaultState);
 
     // Remember: every time this redraws there's a new one and the old one is no good.
-    function localSetText(text: string) {
+    function localSetText(name:string, arg: any) {
+        const str = arg as string
+        console.log("NetStatus status update",str)
         const newState: State = {
             ...state,
-            text: text
+            text: str
         }
         setState(newState)
     }
 
     useEffect(() => {
-        latestCallback = localSetText
+       registry.SetSubscripton("NetStatusString", localSetText )
     })
 
     return (

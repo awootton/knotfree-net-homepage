@@ -11,8 +11,8 @@ Services include:
 - Basic Mqtt 3.1 and Mqtt 5.0 in port 80 via websockets.
 - A text based service on port 7465[^1]
 - A binary pubsub service of the knotfreeiot format on port 8384[^2].
-- A http forwarding service where http GET messages to http://anychannel.knotfree.net will be published to 'anychannel'
-- Service is very cheap. Cheaper than giving out your email address. JWT tokens are used for access and you can get one at [knotfree.net](https://knotfree.net). 
+- A http forwarding service where http GET messages to anychannel.knotfree.net will be published to 'anychannel'
+- Service is very cheap. Cheaper than giving out your email address. JWT tokens are used for access and you can get one at in the ACCESS TOKEN tab. 
 
 [^1]: See example in How to connect using text mode.
 
@@ -27,6 +27,8 @@ The iot architecture that is being presented involves every message sent having 
 ## How
 
 #### How to access the unix time server via the web.
+
+There is an example server subscribed to ```get-unix-time``` that can be queried.
 
 Simply visit [http://get-unix-time.knotfree.net/get/time](http://get-unix-time.knotfree.net/get/time) and the return will be the unix time in seconds. 
 
@@ -45,7 +47,7 @@ Then, we will send a connect command with an access token.
 ```
 C token "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2OTc2MTQ5MjMsImlzcyI6Il85c2giLCJqdGkiOiJJc2dLamd1RmdfVjNzaVVIYWQ3MFNyVlMiLCJpbiI6MTAyNCwib3V0IjoxMDI0LCJzdSI6MjAsImNvIjoyMCwidXJsIjoia25vdGZyZWUubmV0In0.9N6kW6QK4ZUk9129uzJDnU1jSrX6XTcHthsQZiAFL7nwfzRNNEqOWeZgjKlL7ekcHMF-H0VTHKizXZoR1J1_BA"
 ```
-If the token here is stale or overloaded and you need your own you can get that from http://knotfree.net/.
+If the token here is stale or overloaded and you need your own you can get that here in the ACCESS TOKEN tab.
 Then we will make up a random, and hopefully unique, address for ourselves for this session. We will 'subscribe' to it.
 ```
 S myaddresstopicchannelthing82754459
