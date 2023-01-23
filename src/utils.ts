@@ -3,6 +3,40 @@ import * as nacl from 'tweetnacl-ts'
 import { Buffer } from 'buffer'
 import * as b64 from "./TypescriptBase64"
 import sha256 from "fast-sha256";
+import * as types from "./Types";
+
+
+// See Helpers.tsx for utilities that return JSX
+
+
+// is this going to leak?
+const heartbeatCallbacks = new Map<string, () => void>()
+
+export function AddHeartbeatCallback(key: string, cb: () => void) {
+
+    const got = heartbeatCallbacks.get(key)
+
+    heartbeatCallbacks.set(key, cb)
+
+    if (got === undefined) {
+        // if it's our first time
+        // take a breath
+        setTimeout(() => { cb() }, 1000)
+    }
+}
+
+export function StartHeartbeatTimer() {
+    console.log("starting heartbeatTimer")
+    setInterval(() => {
+        // console.log("running heartbeatTimer")
+        heartbeatCallbacks.forEach((value, key) => {
+            // console.log(key);  
+            value()
+        });
+
+    }, 30 * 1000)
+}
+
 
 
 export function Sha256Hash(str: string): Uint8Array {
@@ -35,67 +69,16 @@ export function getBase64FromPassphrase(phrase: string): [string, string] {
     return KeypairToBase64(kp)
 }
 
-// LooseObject is for when we can't help cheating.
-export interface LooseObject { // decend mqtt user props from this 
-    [key: string]: any
-}
-
-// KnotFreeTokenPayload is what all the knotfree tokens have on the inside.
-export type KnotFreeTokenPayload = {
-
-    exp: number  // ExpirationTime unix seconds 
-    iss: string   // Issuer first 4 bytes (or more) of base64 public key of issuer
-    jti: string  // JWTID a unique serial number for this token
-
-    in: number   // bytes per sec
-    out: number   // bytes per sec
-    su: number     // Subscriptions
-    co: number   // Connections
-
-    url: string // a server/path
-}
-
-export const EmptyKnotFreeTokenPayload: KnotFreeTokenPayload = {
-    //
-    exp: 0,
-    iss: "",
-    jti: "",
-
-    in: 0,
-    out: 0,
-    su: 0,
-    co: 0,
-
-    url: ""
-}
-
-export type KnotFreeTokenStats = {
-
-    in: number   // bytes per sec
-    out: number   // bytes per sec
-    su: number     // Subscriptions
-    co: number   // Connections
-}
-
-export const EmptyKnotFreeTokenStats: KnotFreeTokenStats = {
-
-    in: 0,
-    out: 0,
-    su: 0,
-    co: 0,
-}
-
-
-export function GetPayloadFromToken(token: string): [KnotFreeTokenPayload, string] {
+export function GetPayloadFromToken(token: string): [types.KnotFreeTokenPayload, string] {
 
     const parts = token.split(".")
     if (parts.length !== 3) {
-        return [EmptyKnotFreeTokenPayload, "not a JWT token "]
+        return [types.EmptyKnotFreeTokenPayload, "not a JWT token "]
     }
 
     const payloadStr = fromBase64Url(parts[1]).toString()
-    console.log("payloadStr", payloadStr)
-    const payload: KnotFreeTokenPayload = JSON.parse(payloadStr)
+    // console.log("payloadStr", payloadStr)
+    const payload: types.KnotFreeTokenPayload = JSON.parse(payloadStr)
 
     return [payload, ""]
 }
@@ -148,14 +131,30 @@ export function TokenToLimitsText(token: string): string {
     return str
 }
 
-export function KnotFreeTokenStatsToText(payload: KnotFreeTokenStats): string {
+export function KnotFreeTokenStatsToText(payload: types.KnotFreeTokenStats): string {
     let str = ''
 
     str += 'Current subscriptions       = ' + payload.su + "\n"
     str += 'Current connections         = ' + payload.co + "\n"
     str += 'Current bytes per sec input = ' + payload.in + "\n"
-    str += 'MaxCurrentimum bytes per sec output = ' + payload.out + "\n"
+    str += 'Current bytes per sec output = ' + payload.out + "\n"
 
     return str
 }
+
+// Copyright 2021-2022 Alan Tracey Wootton
+// See LICENSE
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 

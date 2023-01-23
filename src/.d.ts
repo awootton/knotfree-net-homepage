@@ -6,4 +6,4 @@ declare module '*.txt' {
 
 declare module 'preval.macro';
 
-
+declare module 'node-dns-sd';

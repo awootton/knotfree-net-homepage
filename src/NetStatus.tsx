@@ -15,24 +15,7 @@ const defaultState: State = {
 type Props = {
 }
 
-// var latestCallback = (text: string) => {
-//     console.log("NetStatus override me ")
-// }
-
-//var incomingText: string = ""
-// export function SetNetStatus(text: string) {
-//     console.log("setting text ", text)
-//     // incomingText = text
-//     setTimeout(() => { latestCallback(text) }, 10)
-// }
-
-
-// const interval = setInterval(()=>{
-//     if ( incomingText != ""){
-
-//     }
-//     incomingText = ""
-//   },10000)
+export let GlobalNetStatus = "offline"
 
 export const NetStatus: FC<Props> = (props: Props): ReactElement => {
 
@@ -41,11 +24,12 @@ export const NetStatus: FC<Props> = (props: Props): ReactElement => {
     // Remember: every time this redraws there's a new one and the old one is no good.
     function localSetText(name:string, arg: any) {
         const str = arg as string
-        console.log("NetStatus status update",str)
+        // console.log("NetStatus status update",str)
         const newState: State = {
             ...state,
             text: str
         }
+        GlobalNetStatus = str
         setState(newState)
     }
 
@@ -60,3 +44,19 @@ export const NetStatus: FC<Props> = (props: Props): ReactElement => {
     )
 
 }
+
+
+// Copyright 2021-2022 Alan Tracey Wootton
+// See LICENSE
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.

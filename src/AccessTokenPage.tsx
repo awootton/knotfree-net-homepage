@@ -19,6 +19,7 @@ import * as helpers from './Helpers'
 import * as utils from './Utils'
 import * as mqtt from './MqttClient'
 import * as registry from './ChangeRegistry'
+import * as types from './Types'
 
 
 type State = {
@@ -50,22 +51,30 @@ export const AccessTokenPage: FC<Props> = (props: Props): ReactElement => {
     var foundtoken = saved.getToken()
     if (foundtoken !== "") {
         startstate.theToken = foundtoken
-        console.log("AccessTokenPage starting No token", foundtoken)
+        // console.log("AccessTokenPage starting token", foundtoken)
     } else {
-        console.log("AccessTokenPage starting No token")
+        // console.log("AccessTokenPage starting No token")
     }
 
     const [state, setState] = React.useState(startstate);
 
-    const [stats,setStats] = React.useState(utils.EmptyKnotFreeTokenStats);
+    const [stats,setStats] = React.useState(types.EmptyKnotFreeTokenStats);
 
     const registryNameTokenStats = 'registryNameTokenStatesYCDmkjgCLM'
 
-    function gotUsageStats(name: string, arg: any) {
+    const gotUsageStats = (name: string, arg: any) => {
 
-        const str = arg.message as string // this stinks FIXME: arg needs type
-        const stats = JSON.parse(str) as utils.KnotFreeTokenStats
-        setStats(stats)
+        console.log('gotUsageStats raw', arg.message.toString() )
+
+        const str = arg.message.toString() // this stinks FIXME: arg needs type
+        try {
+            const newstats = JSON.parse(str) as types.KnotFreeTokenStats
+            // FIXME: validate
+            setStats(newstats)
+        } catch (e) {
+            const newstats = types.EmptyKnotFreeTokenStats
+            console.log('ERROR FAILED gotUsageStats',newstats )  
+        }
     }
 
     useEffect(() => {
@@ -168,7 +177,7 @@ export const AccessTokenPage: FC<Props> = (props: Props): ReactElement => {
 
                     <TextField
                         onChange={ownedTokenChanged}
-                        id="outlined-helperText"
+                        // id="outlined-helperText"
                         label="Paste token here"
                         defaultValue={params.token}
                         helperText="Paste another token here and we will use that one.
@@ -188,7 +197,7 @@ export const AccessTokenPage: FC<Props> = (props: Props): ReactElement => {
         if (error.length > 0) {
             return
         }
-        console.log("sendng publish get stats to ", payload.jti)
+        // console.log("sendng publish get stats to ", payload.jti)
         mqtt.Publish('get stats', payload.jti, registryNameTokenStats)
     }
 
@@ -231,3 +240,17 @@ export const AccessTokenPage: FC<Props> = (props: Props): ReactElement => {
 }
 
 
+// Copyright 2021-2022 Alan Tracey Wootton
+// See LICENSE
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.

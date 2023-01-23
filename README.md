@@ -9,13 +9,13 @@ It is a React 'pwa' and can be served by any http server that serves a folder of
 
 ## Why
 
-There is access to [mqtt5 style](https://github.com/awootton/mqtt5nano) iot devices from the serial port, from the local next, worldwide over mqtt5 and worldwide in a web browser.
+There is access to [mqtt5 style](https://github.com/awootton/mqtt5nano) iot things from the serial port, from the local next, worldwide over mqtt5 and worldwide in a web browser.
 
-However, to use the end-to-end encryption requires code so this page will form small dashboards for devices. (see the ```DEVICES``` tab)
+However, to use the end-to-end encryption requires code so this page will form small dashboards for thingss. (see the ```THINGS``` tab)
 
 ## How
 
-Visit the 'ACCESS TOKEN' tab to get a free access token. Click on the 'DEVICES' tab to access commands on your device. 
+Visit the 'ACCESS TOKEN' tab to get a free access token. Click on the 'THINGS' tab to access commands on your thing. 
 
 To serve this locally simply navgate to the /build directory here and then start a server. eg.  
 ```python3 -m http.server```

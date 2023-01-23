@@ -3,9 +3,10 @@ import * as nacl from 'tweetnacl-ts'
 import { Buffer } from 'buffer'
 
 
+// this is unused by the server
 function getSampleKnotFreeTokenPayload(): KnotFreeTokenPayload {
   var res: KnotFreeTokenPayload = {
-    exp: 999, //`json:"exp,omitempty"` // ExpirationTimeunix seconds
+    exp: 60*60*24*30, //`json:"exp,omitempty"` // ExpirationTimeunix seconds
     iss: "xxx", //`json:"iss"`           // Issuer first 4 bytes (or more) of base64 public key of issuer
     jti: "xxx", //`json:"jti,omitempty"` // JWTID a unique serial number for this Issuer
 
@@ -67,9 +68,9 @@ export function getFreeToken(serverName: string, done: (ok: boolean, tok: string
     serverName += "/"
   }
   //const hoststr = "http://" + util.getProfileName() + "." + serverName + "api1/getToken"
-  const hoststr = "http://" + serverName + "api1/getToken"
+  const hoststr = "https://" + serverName + "api1/getToken"
 
-  //console.log("it's fech time again ... for a Token !!", hoststr)
+  //console.log("it's fetch time again ... for a Token !!", hoststr)
   var data = getSampleKnotFreeTokenRequest()
   const myKeyPair: nacl.BoxKeyPair = nacl.box_keyPair()
   // arg!! wants hex ! data.pkey =  base64url.encode(Buffer.from(keyPair.publicKey))
@@ -111,3 +112,19 @@ export function getFreeToken(serverName: string, done: (ok: boolean, tok: string
   }
   )
 }
+
+
+// Copyright 2021-2022 Alan Tracey Wootton
+// See LICENSE
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.

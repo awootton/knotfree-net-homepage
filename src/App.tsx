@@ -19,15 +19,20 @@ import MenuIcon from '@mui/icons-material/Menu';
 import { HomePage } from './HomePage'
 import { AccessTokenPage } from './AccessTokenPage'
 import { NetStatus } from './NetStatus'
-import { Devices } from './Devices'
+import { SetupThing } from './SetupThing'
+import { Things } from './Things'
 import * as saved from './SavedStuff'
 
 import * as mqtt from "./MqttClient"
 import * as more from "./MoreStuff"
+import * as utils from './Utils'
 
 import Link from '@mui/material/Link';
 
 import Toolbar from '@mui/material/Toolbar';
+import { unwatchFile } from 'fs';
+import { useTabsList } from '@mui/base';
+
 
 
 
@@ -36,7 +41,9 @@ import Toolbar from '@mui/material/Toolbar';
 window.Buffer = window.Buffer || Buffer
 
 
-export const serverName = window.location.hostname + ':' + window.location.port + '/' // "knotfree.net"
+export let serverName = window.location.hostname + ':' + window.location.port + '/' // "knotfree.net"
+
+serverName = "knotfree.net" // atw fix me comment debug out
 
 console.log("Top of App Top of App Top of App Top of App Top of App Top of App ")
 
@@ -45,10 +52,11 @@ if (!mqtt.StartMqtHappened) {
   setTimeout(() => {
     console.log("Initial start of Mqtt Initial start of Mqtt Initial start of Mqtt Initial start of Mqtt ")
     mqtt.StartMqt()
-  }, 1)
+  }, 10)
 
 }
 
+utils.StartHeartbeatTimer();
 
 function App(): ReactElement {
 
@@ -106,10 +114,10 @@ export function VerticalTabs() {
   if (window.location.pathname === '/token') {
     starting = 1
   }
-  if (window.location.pathname === '/mqtt5nano') {
+  if (window.location.pathname === '/setup') {
     starting = 2
   }
-  if (window.location.pathname === '/devices') {
+  if (window.location.pathname === '/Things') {
     starting = 3
   }
   if (window.location.pathname === '/more') {
@@ -134,11 +142,11 @@ export function VerticalTabs() {
           aria-label="Vertical tabs example"
           sx={{ borderRight: 1, borderColor: 'divider' }}
         >
-          <Tab label="About Knotfree" {...a11yProps(0)} />
+          <Tab label="Knotfree" {...a11yProps(0)} />
           <Tab label="Access Token" {...a11yProps(1)} />
-          <Tab label="About mqtt5nano" {...a11yProps(2)} />
-          <Tab label="Devices" {...a11yProps(3)} />
-          <Tab label="more" {...a11yProps(4)} />
+          <Tab label="Setup" {...a11yProps(2)} />
+          <Tab label="Things" {...a11yProps(3)} />
+          <Tab label="Misc" {...a11yProps(4)} />
         </Tabs>
       </>
     )
@@ -150,19 +158,19 @@ export function VerticalTabs() {
 
     var text = "none"
     if (value === 0) {
-      text = "About Knotfree"
+      text = "Knotfree"
     }
     if (value === 1) {
-      text = "Access Token"
+      text = "Get Token"
     }
     if (value === 2) {
-      text = "About mqtt5nano"
+      text = "Setup"
     }
     if (value === 3) {
-      text = "Devices"
+      text = "Things"
     }
     if (value === 4) {
-      text = "more coming"
+      text = "Misc"
     }
 
     return (
@@ -170,39 +178,32 @@ export function VerticalTabs() {
     )
   }
 
-  const devicesUrl = "/devices"
-  // console.log("devicesUrl", devicesUrl)
-
   const panels = (
     <>
       <TabPanel value={value} index={0} >
+
         <HomePage />
+
       </TabPanel>
       <TabPanel value={value} index={1}>
+
         <AccessTokenPage />
+
       </TabPanel>
       <TabPanel value={value} index={2}>
-        <>
-          Mqtt5nano is an easy to use mqtt 5 client for Arduino with utilities to connect to wifi and to mqtt.
-          There are are utilities to make your iot device into a command line server that is accessable worldwide
-          while also having complete end-to-end security. You can find <Link
-            target="_blank"
-            rel="noopener"
-            underline="hover"
-            href={"https://github.com/awootton/mqtt5nano"}> mqtt5nano on github </Link>
-          To command devices see the
-          <Link
-            rel="noopener"
-            underline="hover"
-            href={devicesUrl} > devices </Link>
-          tab here.
-        </>
+      
+         <SetupThing/>
+        
       </TabPanel>
       <TabPanel value={value} index={3}>
-        <Devices />
+
+        <Things />
+
       </TabPanel>
       <TabPanel value={value} index={4}>
+
         <more.MoreStuff/>
+
       </TabPanel>
     </>
   )
@@ -226,11 +227,11 @@ export function VerticalTabs() {
     if (value === 2) { // About mqtt5nano
       text = "https://github.com/awootton/mqtt5nano"
     }
-    if (value === 3) { // devices
-      text = "https://github.com/awootton/knotfree-net-homepage/wiki/Devices"
+    if (value === 3) { // Things
+      text = "https://github.com/awootton/knotfree-net-homepage/wiki/Things"
     }
     if (value === 4) { // misc
-      text = "https://github.com/awootton/knotfree-net-homepage/wiki/Devices"
+      text = "https://github.com/awootton/knotfree-net-homepage/wiki/Things"
     }
     return text
   }
@@ -270,7 +271,6 @@ export function VerticalTabs() {
         sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
         aria-label="mailbox folders"
       >
-        {/* The implementation can be swapped with js to avoid SEO duplication of links. */}
         <Drawer
           container={container}
           variant="temporary"
@@ -316,3 +316,18 @@ export function VerticalTabs() {
 
 
 export default App;
+
+// Copyright 2021-2022 Alan Tracey Wootton
+// See LICENSE
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
