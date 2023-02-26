@@ -4,16 +4,16 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import './homepage.css'
 
-import logo from './KnotFreeKnot128cropped.png';
+import logo from './KnotFreeKnot128cropped.png'
 
-import knotfree_home_md_url from './knotfree-home-md.txt';
+import knotfree_home_md_url from './knotfree-home-md.txt'
 
 type Props = {
 }
 
 export const HomePage: FC<Props> = (props: Props): ReactElement => {
 
-  const [theMarkdown, settheMarkdown] = React.useState("");
+  const [theMarkdown, settheMarkdown] = React.useState("")
 
   useEffect(() => {
     if (theMarkdown.length === 0) {
@@ -29,9 +29,17 @@ export const HomePage: FC<Props> = (props: Props): ReactElement => {
   return (
     <span>
       <img src={logo} className="App-logo" alt="logo" /> 
-      <ReactMarkdown children={theMarkdown}
+      {/* <ReactMarkdown children={theMarkdown}
         remarkPlugins={[remarkGfm]}
-      />
+      /> */}
+      <div className='selButtons'>
+
+      Go to the things tab to set up and access your things.<br></br>
+      <br></br>
+      More coming soon.<br></br>
+      <br></br>
+      
+      </div>
     </span>
   )
 }

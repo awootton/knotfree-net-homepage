@@ -1,8 +1,6 @@
 import { Buffer } from 'buffer'
 
 import React, { FC, ReactElement } from 'react';
-// import logo from './logo.svg';
-// import logo192 from './logo192.png';
 import './App.css';
 
 import Tabs from '@mui/material/Tabs';
@@ -19,7 +17,6 @@ import MenuIcon from '@mui/icons-material/Menu';
 import { HomePage } from './HomePage'
 import { AccessTokenPage } from './AccessTokenPage'
 import { NetStatus } from './NetStatus'
-import { SetupThing } from './SetupThing'
 import { Things } from './Things'
 import * as saved from './SavedStuff'
 
@@ -30,10 +27,6 @@ import * as utils from './Utils'
 import Link from '@mui/material/Link';
 
 import Toolbar from '@mui/material/Toolbar';
-import { unwatchFile } from 'fs';
-import { useTabsList } from '@mui/base';
-
-
 
 
 (window as any).global = window;
@@ -41,19 +34,53 @@ import { useTabsList } from '@mui/base';
 window.Buffer = window.Buffer || Buffer
 
 
-export let serverName = window.location.hostname + ':' + window.location.port + '/' // "knotfree.net"
+export let serverName = window.location.hostname
+export let prefix = "https://"
+export let isDev = false
+export let forceLocalMode = false
 
-serverName = "knotfree.net" // atw fix me comment debug out
+console.log("window.location.port", window.location.port)
 
-console.log("Top of App Top of App Top of App Top of App Top of App Top of App ")
+if ( window.location.port === "3000" ) {
+  serverName = "knotfree.com:8085"
+  isDev = true
+  prefix = "http://"
 
-if (!mqtt.StartMqtHappened) {
+  // for debug only:
+  serverName = "knotfree.net"
+  prefix = "https://"
+
+// serverName = "knotfree.io"
+// prefix = "http://"
+//forceLocalMode = true
+
+}
+
+
+serverName = serverName + '/'
+// "knotfree.net" or localhost:3000/  knotfree.com is the same as localhost in my /etc/hosts file
+
+export var useMqtt = false
+export var useHttp = true // else if not mqtt use http
+
+console.log("Top of App Top of App Top of App Top of App Top of App Top of App v0.1.5 serverName:", prefix, serverName)
+
+if (!mqtt.StartMqtHappened && useMqtt) {
 
   setTimeout(() => {
     console.log("Initial start of Mqtt Initial start of Mqtt Initial start of Mqtt Initial start of Mqtt ")
     mqtt.StartMqt()
   }, 10)
 
+}
+
+export var httpTarget = 'knotfree.io'
+if (serverName.includes('knotfree.io')) {
+  httpTarget = 'knotfree.io'
+} else if (serverName.includes('local')) {
+  httpTarget = 'knotfree.com:8085'
+} else {// is knotfree.net
+  httpTarget = 'knotfree.net'
 }
 
 utils.StartHeartbeatTimer();
@@ -114,9 +141,9 @@ export function VerticalTabs() {
   if (window.location.pathname === '/token') {
     starting = 1
   }
-  if (window.location.pathname === '/setup') {
-    starting = 2
-  }
+  // if (window.location.pathname === '/setup') {
+  //   starting = 2
+  // }
   if (window.location.pathname === '/Things') {
     starting = 3
   }
@@ -127,24 +154,32 @@ export function VerticalTabs() {
   const [value, setValue] = React.useState(starting);
 
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
+    // since we left out #2 we have to pick a value that is not 2
+    if (newValue >= 2) {
+      newValue += 1 // use mapping table TODO
+    }
     saved.setTabState(newValue)
     setValue(newValue);
   };
 
   const tabs = (): ReactElement => {
+    let ordinalValue = value
+    if (ordinalValue >=2 ) {
+      ordinalValue -= 1 // use mapping table TODO
+    }
     return (
       <>
         <Tabs
           orientation="vertical"
           variant="scrollable"
-          value={value}
+          value={ordinalValue}
           onChange={handleChange}
           aria-label="Vertical tabs example"
           sx={{ borderRight: 1, borderColor: 'divider' }}
         >
           <Tab label="Knotfree" {...a11yProps(0)} />
           <Tab label="Access Token" {...a11yProps(1)} />
-          <Tab label="Setup" {...a11yProps(2)} />
+          {/* <Tab label="Setup" {...a11yProps(2)} /> */}
           <Tab label="Things" {...a11yProps(3)} />
           <Tab label="Misc" {...a11yProps(4)} />
         </Tabs>
@@ -163,9 +198,9 @@ export function VerticalTabs() {
     if (value === 1) {
       text = "Get Token"
     }
-    if (value === 2) {
-      text = "Setup"
-    }
+    // if (value === 2) {
+    //   text = "Setup"
+    // }
     if (value === 3) {
       text = "Things"
     }
@@ -190,11 +225,11 @@ export function VerticalTabs() {
         <AccessTokenPage />
 
       </TabPanel>
-      <TabPanel value={value} index={2}>
+      {/* <TabPanel value={value} index={2}>
       
          <SetupThing/>
         
-      </TabPanel>
+      </TabPanel> */}
       <TabPanel value={value} index={3}>
 
         <Things />
@@ -202,7 +237,7 @@ export function VerticalTabs() {
       </TabPanel>
       <TabPanel value={value} index={4}>
 
-        <more.MoreStuff/>
+        <more.MoreStuff />
 
       </TabPanel>
     </>
@@ -214,8 +249,7 @@ export function VerticalTabs() {
     setMobileOpen(!mobileOpen);
   };
 
-  function getHelpUrl() :string
-  {
+  function getHelpUrl(): string {
 
     var text = "none"
     if (value === 0) { // about knotfree
@@ -224,9 +258,9 @@ export function VerticalTabs() {
     if (value === 1) { // Access Token
       text = "https://github.com/awootton/knotfreeiot/wiki/The-Access-Token-UI"
     }
-    if (value === 2) { // About mqtt5nano
-      text = "https://github.com/awootton/mqtt5nano"
-    }
+    // if (value === 2) { // About mqtt5nano
+    //   text = "https://github.com/awootton/mqtt5nano"
+    // }
     if (value === 3) { // Things
       text = "https://github.com/awootton/knotfree-net-homepage/wiki/Things"
     }
@@ -239,7 +273,9 @@ export function VerticalTabs() {
   const container = window !== undefined ? () => window.document.body : undefined;
 
   return (
+    <div className = 'surroundingDiv'>
     <Box className='surroundingBox' sx={{ display: 'flex' }}>
+
       {/* <CssBaseline /> */}
       <AppBar
         position="fixed"
@@ -258,11 +294,11 @@ export function VerticalTabs() {
           >
             <MenuIcon />
           </IconButton>
-         
-            <MyToolbarText />
-           
-          <span className= 'help'><Link href={getHelpUrl()}>Help</Link></span>
-            
+
+          <MyToolbarText />
+
+          <span className='help'><Link href={getHelpUrl()}>Help</Link></span>
+
           <NetStatus />
         </Toolbar>
       </AppBar>
@@ -310,6 +346,7 @@ export function VerticalTabs() {
         {panels}
       </Box>
     </Box>
+    </div>
   )
 
 }

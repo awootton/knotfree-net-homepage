@@ -2,18 +2,44 @@
 
 export type ThingConfig = {
 
-    adminPublicKey: string // in base64 format, if "" inherit from parent
-    adminPrivateKey: string // in base64 format, if "" inherit from parent
+    adminPublicKey: string // in base64 format 
+    adminPrivateKey: string // in base64 format 
+
     thingPublicKey: string // in base64 format
 
-    longname: string, // the Thing name
-    shortname: string, // for local net
+    longName: string // the Thing name
+    shortName: string // for local net
 
-    commandString: string, // eg 'get time'
-    cmdArgCount: number,// usually 0
-    cmdDescription: string,
+    commandString: string // eg 'get time'
+    cmdArgCount: number// usually 0
+    cmdDescription: string
     stars: number
 }
+
+export const EmptyThingConfig: ThingConfig = {
+    adminPublicKey: '', // in base64 format 
+    adminPrivateKey: '', // in base64 format 
+
+    thingPublicKey: '', // in base64 format
+
+    longName: '', // the Thing name
+    shortName: '', // for local net
+
+    commandString: '', // eg 'get time'
+    cmdArgCount: 0,// usually 0
+    cmdDescription: '',
+    stars: 0
+}
+
+export const TestThingsConfig: ThingsConfig = {
+
+    // globalConfig: {
+       // adminPublicKey: "",
+       // adminPrivateKey: "",
+     // },
+    things: []
+}
+
 
 export type GlobalConfig = {
 
@@ -23,7 +49,7 @@ export type GlobalConfig = {
 
 export type ThingsConfig = {
 
-    globalConfig: GlobalConfig
+   // globalConfig: GlobalConfig
 
     things: ThingConfig[]
 }
@@ -31,107 +57,50 @@ export type ThingsConfig = {
 // ValidateThingsConfig will throw if the object is not really a  ThingsConfig
 // it's meant to follow JSON.parse in a try-catch
 // TODO: automate somehow. Test.
-export function ValidateThingsConfig (  config : ThingsConfig){
-    if ( config.globalConfig === undefined ){
-        throw new Error("missing globalConfig")
-     }
-     if ( config.globalConfig.adminPublicKey === undefined ){
-        throw new Error("missing globalConfig.adminPublicKey")
-     }
-     if ( config.globalConfig.adminPrivateKey === undefined ){
-        throw new Error("missing globalConfig.adminPrivateKey")
-     }
-     if ( config.things === undefined ){
+export function ValidateThingsConfig(config: ThingsConfig) {
+    // if (config.globalConfig === undefined) {
+    //     throw new Error("missing globalConfig")
+    // }
+    // if (config.globalConfig.adminPublicKey === undefined) {
+    //     throw new Error("missing globalConfig.adminPublicKey")
+    // }
+    // if (config.globalConfig.adminPrivateKey === undefined) {
+    //     throw new Error("missing globalConfig.adminPrivateKey")
+    // }
+    if (config.things === undefined) {
         throw new Error("missing Things")
-     }
-     for ( let i = 0; i < config.things.length; i ++ ){
-        const dev:ThingConfig = config.things[i]
-        if ( dev.adminPublicKey === undefined ){
+    }
+    for (let i = 0; i < config.things.length; i++) {
+        const dev: ThingConfig = config.things[i]
+        if (dev.adminPublicKey === undefined) {
             throw new Error("missing adminPublicKey")
-         }
-         if ( dev.adminPrivateKey === undefined ){
+        }
+        if (dev.adminPrivateKey === undefined) {
             throw new Error("missing adminPrivateKey")
-         }
-         if ( dev.thingPublicKey === undefined ){
+        }
+        if (dev.thingPublicKey === undefined) {
             throw new Error("missing ThingPublicKey")
-         }
-         if ( dev.adminPrivateKey === undefined ){
-            throw new Error("missing adminPrivateKey")
-         }
-         if ( dev.longname === undefined ){
+        }
+        if (dev.longName === undefined) {
             throw new Error("missing name")
-         }
-         if ( dev.shortname === undefined ){
+        }
+        if (dev.shortName === undefined) {
             throw new Error("missing shortname")
-         }
-         if ( dev.cmdArgCount === undefined ){
+        }
+        if (dev.cmdArgCount === undefined) {
             throw new Error("missing cmdArgCount")
-         }
-         if ( dev.cmdDescription === undefined ){
+        }
+        if (dev.cmdDescription === undefined) {
             throw new Error("missing cmdDescription")
-         }       
-     }
+        }
+    }
 }
-
-// TODO: move to types
-export const TestThingsConfig: ThingsConfig = {
-
-    globalConfig: {
-        adminPublicKey: "",
-        adminPrivateKey: "",
-    },
-    things: [
-        {
-            adminPublicKey: "",// in base64 format, if "" inherit from parent
-            adminPrivateKey: "", // in base64 format, if "" inherit from parent
-            thingPublicKey: "", // in base64 format
-
-            longname: "get-unix-time",
-            shortname: "get-unix-time",
-          
-
-            commandString: "get time",
-            cmdArgCount: 0,
-            cmdDescription: "unix time in seconds",
-            stars:1
-        },
-        {
-            adminPublicKey: "",// in base64 format, if "" inherit from parent
-            adminPrivateKey: "", // in base64 format, if "" inherit from parent
-            thingPublicKey: "", // in base64 format
-
-            longname: "backyard-temp-9gmf97inj5e",
-            shortname: "backyard temp",
-          
-
-            commandString: "get temp",
-            cmdArgCount: 0,
-            cmdDescription: "temp in F",
-            stars:1
-        },
-        {
-            adminPublicKey: "",// in base64 format, if "" inherit from parent
-            adminPrivateKey: "", // in base64 format, if "" inherit from parent
-            thingPublicKey: "", // in base64 format
-
-            longname: "get-unix-time",
-            shortname: "get-unix-time",
-         
-            commandString: "help",
-            cmdArgCount: 0,
-            cmdDescription: "list the commands",
-            stars:1
-        },
-    ]
-}
-
-
 
 var ThingStr = ""
-export function setThingsConfig( config: ThingsConfig) {
+export function setThingsConfig(config: ThingsConfig) {
 
     ThingStr = JSON.stringify(config)
-    // console.log(setThingsConfig,ThingStr)
+    console.log(setThingsConfig,ThingStr)
     if (!publicComputer) {
         localStorage.setItem('ThingsConfig', ThingStr)
     }
@@ -148,11 +117,13 @@ export function getThingsConfig(): ThingsConfig {
         }
     }
     try {
-        const got : ThingsConfig = JSON.parse(ThingStr)
+        const got: ThingsConfig = JSON.parse(ThingStr)
+        console.log("getThingsConfig ", got)
         ValidateThingsConfig(got)
         return got
-    } catch( e ) {
+    } catch (e) {
         console.log("getThingsConfig parse error ", e)
+        localStorage.setItem('ThingsConfig', JSON.stringify(TestThingsConfig))
         return TestThingsConfig
     }
 }

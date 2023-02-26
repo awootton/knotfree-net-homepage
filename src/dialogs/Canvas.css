@@ -1,0 +1,6 @@
+div.canvas {
+    min-width: 512;
+    min-height: 512;
+    border-color: black;
+    border-width: 1px;
+}

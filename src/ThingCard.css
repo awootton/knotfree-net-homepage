@@ -1,0 +1,245 @@
+.devCard {
+    display: flex;
+    flex-direction: column;
+    padding: 8px;
+    margin: 4px;
+    position: relative;
+}
+
+.detailsDiv {
+    margin-bottom: 8px;
+}
+
+.spacingDiv {
+    margin: 8px;
+}
+
+.cardRow1 {
+    display: flex;
+    flex-direction: row;
+    padding: 12px;
+}
+
+.commandInputSpan {
+    flex: 3;
+    flex-direction: row;
+}
+
+span.moreDevInfoWrapper {
+    flex: 1;
+    margin-left: 4px;
+    font-size: small;
+    color: grey;
+    /* max-width: 200px; */
+    overflow: none;
+}
+
+.moreDevInfoSpan {
+    flex: 1;
+    margin-left: 4px;
+    font-size: small;
+    color: grey;
+    overflow: scroll;
+}
+
+.devName {
+    flex-grow: 4;
+    margin: auto;
+    padding: 4px;
+}
+
+.devKey {
+    flex-grow: 1;
+    margin: auto;
+}
+
+.adminKey {
+    flex-grow: 1;
+    margin: auto;
+}
+
+.cardRow2 {
+    display: flex;
+    flex-direction: row;
+    padding: 20px;
+    border-color: black;
+    border-style: solid;
+    border-width: 0px;
+}
+
+.cmdSpan {
+    position: relative;
+    flex-grow: 6;
+    border-radius: 6px;
+    border: 2px;
+    margin: 8;
+    border-color: green;
+    background-color: white;
+    border-style: solid;
+    border-width: 0px
+}
+
+.resultSpan {
+    flex-grow: 6;
+    position: relative;
+    margin-left: 2px;
+    border-color: red;
+    border-style: solid;
+    border-width: 0px;
+}
+
+.cmdpulldown {
+    margin: auto;
+}
+
+.arg {
+    margin: auto;
+}
+
+.resultDiv {
+    padding: 16px;
+    border: 1px;
+    border-radius: 8px;
+    border-color: grey;
+    border-style: solid;
+    overflow: scroll;
+    overflow-x: scroll;
+    max-width: 512px;
+    max-height: 22px;
+}
+
+.menu {
+    /* flex-grow: 1; */
+    margin: auto;
+    position: absolute;
+    right: 0;
+    top: 0;
+}
+
+.faux-button {
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px;
+    margin: auto;
+    padding: 12px;
+}
+
+.overlay {
+    position: absolute;
+    font-size: .75rem;
+    top: -10px;
+    left: 12px;
+    color: grey;
+    background-color: white;
+    /* transform: translate(2px, -12px) scale(0.75); */
+    border: 2px;
+    border-radius: 4px;
+    border-color: white;
+    border-style: solid;
+    padding-left: 4px;
+    padding-right: 4px;
+}
+
+.bottomoverlay {
+    overflow: scroll;
+    /* vertical-align: bottom; */
+    position: absolute;
+    bottom: -16px;
+    left: 12px;
+    font-size: 0.75rem;
+    color: grey;
+    background-color: white;
+    /* transform: translate(-34px, calc(100% + 14px)) scale(0.75); */
+    /* transform: translateY(170%) translateX(-24px) scale(0.75); */
+    border: 2px;
+    border-radius: 4px;
+    border-color: white;
+    border-style: solid;
+    padding-left: 4px;
+    padding-right: 4px;
+}
+
+.cmdSpan2 {
+    flex-grow: 4;
+    border-radius: 6px;
+    border: 2px;
+    margin: 8;
+    border-color: black;
+    background-color: white;
+}
+
+.cmdArg {
+    flex-grow: 3;
+    border-radius: 6px;
+    border: 2px;
+    margin: 8;
+    border-color: black;
+    background-color: white;
+}
+
+.cmdButton {
+    margin: auto;
+    width: 100%;
+    height: 100%;
+    border-color: grey;
+    background-color: white;
+    border-radius: 8px;
+    min-width: 64px;
+    font-size: larger;
+}
+
+.overlay2 {
+    position: absolute;
+    font-size: .75rem;
+    left: 12px;
+    top: 7px;
+    color: grey;
+    background-color: white;
+    /* transform: translate(-4px, 2px) scale(0.75); */
+    border: 1px;
+    border-radius: 4px;
+    border-color: white;
+    border-style: solid;
+    padding-left: 4px;
+    padding-right: 4px;
+}
+
+.overlay3 {
+    position: absolute;
+    font-size: .75rem;
+    left: 12px;
+    top: -15px;
+    color: grey;
+    background-color: white;
+    /* transform: translate(-4px, 2px) scale(0.75); */
+    border: 1px;
+    border-radius: 4px;
+    border-color: white;
+    border-style: solid;
+    padding-left: 4px;
+    padding-right: 4px;
+}
+
+.bottomoverlay2 {
+    position: absolute;
+    bottom: -16px;
+    left: 12px;
+    font-size: .75rem;
+    color: grey;
+    background-color: white;
+    /* transform: translate(-4px, calc(100% + 14px)) scale(0.75); */
+    /* transform: translateY(120%) translateX(-24px) scale(0.75); */
+    border: 1px;
+    border-radius: 4px;
+    border-color: white;
+    border-style: solid;
+    padding-left: 4px;
+    padding-right: 4px;
+}
+
+p {
+    margin: 0px;
+}
+
+p.error {
+    margin: 0px;
+    color: red;
+}

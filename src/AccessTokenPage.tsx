@@ -12,10 +12,10 @@ import { CopyToClipboard } from 'react-copy-to-clipboard'
 import Dialog from '@material-ui/core/Dialog';
 import TextField from '@mui/material/TextField';
 
-import { serverName } from './App'
+import * as app from  './App'
 
 import * as saved from './SavedStuff'
-import * as helpers from './Helpers'
+import * as helpers from './Utils-tsx'
 import * as utils from './Utils'
 import * as mqtt from './MqttClient'
 import * as registry from './ChangeRegistry'
@@ -58,13 +58,13 @@ export const AccessTokenPage: FC<Props> = (props: Props): ReactElement => {
 
     const [state, setState] = React.useState(startstate);
 
-    const [stats,setStats] = React.useState(types.EmptyKnotFreeTokenStats);
+    const [stats, setStats] = React.useState(types.EmptyKnotFreeTokenStats);
 
     const registryNameTokenStats = 'registryNameTokenStatesYCDmkjgCLM'
 
     const gotUsageStats = (name: string, arg: any) => {
 
-        console.log('gotUsageStats raw', arg.message.toString() )
+        console.log('gotUsageStats raw', arg.message.toString())
 
         const str = arg.message.toString() // this stinks FIXME: arg needs type
         try {
@@ -73,7 +73,7 @@ export const AccessTokenPage: FC<Props> = (props: Props): ReactElement => {
             setStats(newstats)
         } catch (e) {
             const newstats = types.EmptyKnotFreeTokenStats
-            console.log('ERROR FAILED gotUsageStats',newstats )  
+            console.log('ERROR FAILED gotUsageStats', newstats)
         }
     }
 
@@ -84,8 +84,8 @@ export const AccessTokenPage: FC<Props> = (props: Props): ReactElement => {
     function getTokenFromServer() {
         console.log("getting token from server")
 
-        console.log("serverName", serverName)
-        util.getFreeToken(serverName, (ok: boolean, tok: string) => {
+        console.log("serverName", app.prefix, app.serverName)
+        util.getFreeToken(app.prefix, app.serverName, (ok: boolean, tok: string) => {
             console.log("got a token", tok, ok)
             const newState: State = {
                 ...state,
@@ -131,7 +131,7 @@ export const AccessTokenPage: FC<Props> = (props: Props): ReactElement => {
 
             return (
                 <>
-                    Your token:<br></br>
+                    A token is used when we are not working in http mode and is also used when configuring 'things' so that they can access the knotfree server:<br></br>
                     <code>
                         {/* <Paper>{state.theToken}</Paper> */}
                         <pre>{state.theToken}</pre>
@@ -151,7 +151,8 @@ export const AccessTokenPage: FC<Props> = (props: Props): ReactElement => {
 
             return (
                 <>
-                    Looks like you don't have a token yet.<br></br>
+                    An access token is used by the things to log onto the network.<br></br>
+                    Looks like you don't have a token yet. Press this button.<br></br>
                     <Button variant="outlined" className='myButtons' onClick={getTokenFromServer} >Get new access token</Button><br></br>
                     <Button variant="outlined" className='myButtons' onClick={addExistingToken} >Add existing token</Button><br></br>
                 </>
@@ -207,16 +208,12 @@ export const AccessTokenPage: FC<Props> = (props: Props): ReactElement => {
     const useageText = utils.KnotFreeTokenStatsToText(stats)
     const usageParagraphs = helpers.LinesToParagraphs(useageText)
 
-    return (
-        <span>
-            <Dialog
-                open={state.isPasteOwnedToken}
-                onClose={handleDialogClose}
-            >
-                <PasteOwnedTokenDialog token={state.theToken} />
-            </Dialog>
-
-            {getTokMessage()}
+    function makeTokenPropertiesElement(): ReactElement {
+        let [payload, error] = utils.GetPayloadFromToken(state.theToken)
+        if (error.length > 0) {
+            return (<></>)
+        }
+        return (<>
             <div>
                 <div className='overlay' >
                     Token properties
@@ -234,7 +231,24 @@ export const AccessTokenPage: FC<Props> = (props: Props): ReactElement => {
                     {usageParagraphs}
                 </div>
             </div>
- 
+        </>
+        )
+
+    }
+
+
+    return (
+        <span>
+            <Dialog
+                open={state.isPasteOwnedToken}
+                onClose={handleDialogClose}
+            >
+                <PasteOwnedTokenDialog token={state.theToken} />
+            </Dialog>
+
+            {getTokMessage()}
+            {makeTokenPropertiesElement()}
+
         </span>
     )
 }

@@ -1,21 +1,27 @@
-        code {
-            background-color: lightgray
-        }
-        
-        pre {
-            background-color: lightgray
-        }
-        
-        p {
-            width: 100%;
-            overflow-wrap: normal
-        }
-        
-        li {
-            width: 100%;
-            overflow-wrap: normal
-        }
-        
-        span {
-            align-items: left
-        }
+ .selButtons {
+     background-color: white;
+     width: 100%;
+     height: 256px;
+ }
+ 
+ code {
+     background-color: lightgray
+ }
+ 
+ pre {
+     background-color: lightgray
+ }
+ 
+ p {
+     width: 100%;
+     overflow-wrap: normal
+ }
+ 
+ li {
+     width: 100%;
+     overflow-wrap: normal
+ }
+ 
+ span {
+     align-items: left
+ }

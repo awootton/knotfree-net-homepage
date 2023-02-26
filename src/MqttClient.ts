@@ -38,10 +38,10 @@ export function Publish(message: string, address: string, nonc: string) {
         publishfunc(message, address, nonc)
         // what the actual fuck is going on here why this is needed? TODO: FIXME
         // some kind of weird race condition? 
-        if (pendingPings < 20 ) {
-            pendingPings ++ 
+        if (pendingPings < 20) {
+            pendingPings++
             setTimeout(() => {
-                publishfunc('ping',MyReturnAddress,'')
+                publishfunc('ping', MyReturnAddress, '')
                 pendingPings--
             }, 100 + pendingPings * 10);
         }
@@ -54,11 +54,11 @@ var publishfunc = (message: string, address: string, nonc: string) => {
 
 function reconnect(started: boolean, client: any) {
     if (started && client !== undefined) {
-        console.log("reconnect ending client",client.options.clientId)
-        
+        console.log("reconnect ending client", client.options.clientId)
+
         // what is the function here? client.disconnect()
         // what is the function here? client.close()
-        client.end({force:true})
+        client.end({ force: true })
 
         setTimeout(() => {
             registry.PublishChange("NetStatusString", "Reconnecting")
@@ -76,7 +76,6 @@ export function StartMqt() {
 
     StartMqtHappened = true
 
-
     var client: any
     var started = true
 
@@ -90,25 +89,29 @@ export function StartMqt() {
     }
     console.log("have token, starting")
 
-    //var url =\'ws://knotlocal.com:8085/mqtt'
-    //const insecureName = app.serverName //.replace(".net",".io") // 
-    var mqttWsHost =  app.serverName + '/mqtt'
+    // app.serverName eg knotfree.io:/  or knotfree.net:/ 
+    var mqttWsHost = app.serverName + 'mqtt'
+    let wtype = "ws"
 
     // get the url from the  token
     const [jtoken, err] = utils.GetPayloadFromToken(mqttOptions.password)
     if (err === "") {
-        // mqttWsHost = 'ws://' + jtoken.url
-        // if (!mqttWsHost.endsWith('/mqtt')) {
-        //     mqttWsHost += '/mqtt' // for legacy tokens
-        // }
-        // // local dev hacks
-        //mqttWsHost = mqttWsHost.replace("knotfree.net", "knotfree.io")
 
         mqttWsHost = mqttWsHost.replace("localhost:3000", "localhost")
         mqttWsHost = mqttWsHost.replace("localhost", "localhost:8085")
         mqttWsHost = mqttWsHost.replace("knotlocal.com", "knotlocal.com:8085")
         mqttWsHost = mqttWsHost.replace("knotfree.com", "knotfree.com:8085")
-        mqttWsHost = 'wss://' + mqttWsHost
+
+        if (mqttWsHost.includes('knotfree.io')) {
+            mqttWsHost = 'ws://' + mqttWsHost
+            wtype = "ws"
+        } else if (mqttWsHost.includes('local')) {
+            mqttWsHost = 'ws://' + mqttWsHost
+            wtype = "ws"
+        } else {// is knotfree.net
+            mqttWsHost = 'wss://' + mqttWsHost
+            wtype = "wss"
+        }
 
     } else {
         const server = saved.getMqttServer()
@@ -122,15 +125,16 @@ export function StartMqt() {
         }
     }
 
-    const ourMqttOptions : MqttOptionsType = {
+    const ourMqttOptions: MqttOptionsType = {
         ...SomeMqttOptions
     }
     ourMqttOptions.clientId = utils.randomString(24)
     ourMqttOptions.user = ourMqttOptions.clientId
     ourMqttOptions.username = ourMqttOptions.clientId
+    ourMqttOptions.protocol = wtype
 
     started = true
-    // 'ws://knotfree.net/mqtt' 'ws://localhost:8085/mqtt'
+    // 'ws://knotfree.io/mqtt' or 'ws://localhost:8085/mqtt' or 'wss://knotfree.net/mqtt'
 
 
     console.log("Connecting to new client ", mqttWsHost, ourMqttOptions.clientId)
@@ -163,7 +167,7 @@ export function StartMqt() {
             // })
 
             if (err) {
-                console.log("subscribe err", err,client.options.clientId)
+                console.log("subscribe err", err, client.options.clientId)
                 reconnect(started, client)
             }
         })
@@ -209,13 +213,13 @@ export function StartMqt() {
         props.message = message
 
         const strmsg = Buffer.from(message).toString()
-        if ( strmsg === 'ping') {
+        if (strmsg === 'ping') {
             // console.log('Received ping ', sentPings)
             sentPings--
         } else {
             console.log('Received Message ', strmsg, nonc)
         }
-        
+
         // console.log('Received Message props ', props)
         registry.PublishChange(nonc, props)
 
@@ -225,37 +229,37 @@ export function StartMqt() {
 
 
     client.on("error", (err: any) => {
-        console.log("mqtt on error",client.options.clientId)
+        console.log("mqtt on error", client.options.clientId)
         registry.PublishChange("NetStatusString", "Error")
         reconnect(started, client)
     })
 
     client.on("failure", (message: any) => {
-        console.log("mqtt on failure", message,client.options.clientId)
+        console.log("mqtt on failure", message, client.options.clientId)
         registry.PublishChange("NetStatusString", "Failed")
         reconnect(started, client)
     })
 
     client.on("disconnect", (message: any) => {
-        console.log("mqtt on disconnect", message,client.options.clientId)
+        console.log("mqtt on disconnect", message, client.options.clientId)
         registry.PublishChange("NetStatusString", "Disconnected")
         reconnect(started, client)
     })
 
     client.on("offline", (message: any) => {
-        console.log("mqtt on offline", message,client.options.clientId)
+        console.log("mqtt on offline", message, client.options.clientId)
         registry.PublishChange("NetStatusString", "Offline")
         reconnect(started, client)
     })
 
     client.on("end", () => {
-        console.log("mqtt on end",client.options.clientId)
+        console.log("mqtt on end", client.options.clientId)
         registry.PublishChange("NetStatusString", "Ended")
         // this would create a loop: reconnect(started, client)
     })
 
     client.on("reconnect", () => {
-        console.log("mqtt on reconnect",client.options.clientId)
+        console.log("mqtt on reconnect", client.options.clientId)
         registry.PublishChange("NetStatusString", "Connected")
         client.subscribe(MyReturnAddress, function (err: any) {
             if (err) {
@@ -280,13 +284,13 @@ export function StartMqt() {
                 }
             }
         };
-        if ( message === 'ping'){
+        if (message === 'ping') {
             sentPings++
             // console.log("Sending ping message ", sentPings)
         } else {
             console.log("Sending publish message ", message, nonc, address)
         }
-        
+
         // const pgot = 
         client.publish(address, message, options)
         //console.log("mqtt pgot",pgot)
@@ -331,7 +335,7 @@ const SomeMqttOptions: MqttOptionsType = {
     protocolVersion: 5, // we need this. not 4
 
     clean: true,
-    reconnectPeriod: 10000 ,// 0 means no reconnect, was 4000, // try reconnect after 4 sec
+    reconnectPeriod: 10000,// 0 means no reconnect, was 4000, // try reconnect after 4 sec
     connectTimeout: 30 * 1000,  // wait 30 sec for conack
 
     // will: {  // atw FIXME: it's not just that we don't implement 'will' it's that it errors. FIXME: fix the go

@@ -4,9 +4,10 @@ import { Button } from '@mui/material'  // Card,Paper
 
 import { CopyToClipboard } from 'react-copy-to-clipboard'
 
-import * as helpers from './Helpers'
+import * as helpers from './Utils-tsx'
 import * as types from './Types'
 import * as saved from './SavedStuff'
+import * as app from './App'
 
 import ConfirmDialog from './dialogs/ConfirmDialog'
 import MyInputDialog from './dialogs/MyInputDialog'
@@ -20,7 +21,7 @@ type Props = {
 
 export const MoreStuff: FC<Props> = (props: Props): ReactElement => {
 
-    let parts: string[] = ['aaa', 'bbb']
+    // let parts: string[] = ['aaa', 'bbb']
     const [clusterStats, setClusterStats] = React.useState(types.EmptyClusterStats);
 
     const [isConfirm, setConfirm] = React.useState(false);
@@ -29,9 +30,11 @@ export const MoreStuff: FC<Props> = (props: Props): ReactElement => {
 
     const [isStars, setIsStars] = React.useState(false);
 
+    const [samplePassword, setSamplePassword] = React.useState("");
 
-    function getStat(server: string) {
-        let url = "http://" + server + "/api1/getstats"
+    function getStat() {
+
+        let url = app.prefix + app.serverName + "api1/getstats"
         console.log('getStat url', url)
 
         fetch(url, { method: "GET" })
@@ -46,13 +49,25 @@ export const MoreStuff: FC<Props> = (props: Props): ReactElement => {
             .catch(error => console.error(error));
     }
 
+    function getPassword() {
+
+        let url = app.prefix + app.serverName + "api1/getGiantPassword"
+        console.log('getPassword url', url)
+
+        fetch(url, { method: "GET" })
+            .then(response => response.text())
+            .then(data => {
+                var str = '' + data
+                console.log('getPassword:' + str)
+                setSamplePassword(str)
+            })
+            .catch(error => console.error(error));
+    }
+
     function getCluster() {
 
-        var server = window.location.host // eg. localhost:3000 or knotfree.net
-        if (server.indexOf('local') >= 0) {
-            server = "local.localhost:8085"
-        }
-        let url = "http://" + server + "/api1/getallstats"
+        const url = app.prefix + app.serverName + "api1/getallstats"
+
         console.log('MoreStuff url', url)
 
         fetch(url, { method: "GET" })
@@ -65,7 +80,7 @@ export const MoreStuff: FC<Props> = (props: Props): ReactElement => {
                     // TODO: validate
                     setClusterStats(stats)
                 } else {
-                    getStat(server)
+                    getStat()
                 }
             })
             .catch(error => console.error(error));
@@ -110,7 +125,10 @@ export const MoreStuff: FC<Props> = (props: Props): ReactElement => {
 
     // marshal into stats and then write as array of divs with lines
     function formatStats(): ReactElement[] {
-        // console.log("stats raw")
+        console.log("stats raw")
+        if ( clusterStats.Stats.length === 0) {
+            return ([])
+        }
         const stats = clusterStats;
         var arr = stats.Stats
         var results: ReactElement[] = []
@@ -138,7 +156,7 @@ export const MoreStuff: FC<Props> = (props: Props): ReactElement => {
             return (<></>)
         } else {
             return (
-                <p className = 'error'>  {errorstr}</p>
+                <p className='error'>  {errorstr}</p>
             )
         }
     }
@@ -148,12 +166,12 @@ export const MoreStuff: FC<Props> = (props: Props): ReactElement => {
         // and set it in saved.
         console.log('have suppoed config', str)
         try {
-            const got : saved.ThingsConfig = JSON.parse(str)
+            const got: saved.ThingsConfig = JSON.parse(str)
             saved.ValidateThingsConfig(got)
             saved.setThingsConfig(got)
             setErrorstr('')
         } catch (e) {
-            setErrorstr("Incorrect config:"+ e)
+            setErrorstr("Incorrect config:" + e)
         }
 
         setIsConfigInput(false)
@@ -162,7 +180,7 @@ export const MoreStuff: FC<Props> = (props: Props): ReactElement => {
 
     return (
         <>
-           
+
             <div className='segment'>
                 <div className='buttonsDiv'>
                     <CopyToClipboard text={getConfig()}
@@ -197,7 +215,7 @@ export const MoreStuff: FC<Props> = (props: Props): ReactElement => {
 
             <div className='segment'>
 
-                <Button variant='outlined' onClick={ ()=>setIsStars(true) }>push me</Button>
+                <Button variant='outlined' onClick={() => setIsStars(true)}>push me</Button>
 
             </div>
 
@@ -217,14 +235,22 @@ export const MoreStuff: FC<Props> = (props: Props): ReactElement => {
                 label='paste it in here'
                 default=''
             />
+            <div className='segment'>
+            Just 4 of these words would require 1,000,000,000,000 guesses to crack. Every word makes it 1000 times harder.
+
+                <Button variant='outlined' onClick={getPassword}>Get Password Ideas</Button>
+                <div>
+                    {samplePassword}
+                </div>
+            </div>
             <StarsDialog
                 open={isStars}
                 onClose={() => { setIsStars(false) }} //
-                onConfirm={()=>{}}
+                onConfirm={() => { }}
                 title=""
-               // body='If you have a configuration that you saved or created you can paste it here.'
-             //   label=''
-              //  default=''
+            // body='If you have a configuration that you saved or created you can paste it here.'
+            //   label=''
+            //  default=''
             />
 
 

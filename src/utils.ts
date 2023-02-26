@@ -9,6 +9,22 @@ import * as types from "./Types";
 // See Helpers.tsx for utilities that return JSX
 
 
+export function BoxItItUp(message: Buffer, nonce: Buffer, theirPublicKey: Buffer, ourSecretKey: Buffer): Buffer {
+    const mySecretKey = ourSecretKey
+    const rtmp = nacl.box(message, nonce, theirPublicKey, mySecretKey)
+    const result = Buffer.from(rtmp)
+    return result
+}
+
+export function UnBoxIt(message: Buffer, nonce: Buffer, theirPublicKey: Buffer, ourSecretKey: Buffer): Buffer {
+    var publicKey = theirPublicKey
+    const mySecretKey = ourSecretKey
+    const rtmp = nacl.box_open(message, nonce, publicKey, mySecretKey)
+    const result = Buffer.from(rtmp || Buffer.from(""))
+    return result
+}
+
+
 // is this going to leak?
 const heartbeatCallbacks = new Map<string, () => void>()
 
@@ -99,6 +115,7 @@ export function fromBase64Url(str: string): Buffer {
 
 
 // FIXME: atw use crypto.randomBytes(size[, callback]) and convert to b64 ?
+// randomString returns a random string of length len in base 62
 export function randomString(len: number) {
     const charSet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     var randomString = '';

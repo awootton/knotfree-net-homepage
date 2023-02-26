@@ -6,6 +6,7 @@
 
 This is the source code to the knotfree.net homepage. 
 It is a React 'pwa' and can be served by any http server that serves a folder of static assest.
+It can also be installed as an app in iOS and Android. I havn't tried Windows and it's supposed to work on a Mac.
 
 ## Why
 

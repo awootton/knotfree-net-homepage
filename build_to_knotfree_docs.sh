@@ -1,8 +1,7 @@
 #!/bin/bash
 
 # run this is a terminal window
-# it will build the project, copy it to docs/
-# in the knot free project
+# it will build the project, copy it to docs/ in the knotfreeiot project
 # because, for now, we embed these static assets in the knotfree container. 
 
 yarn build

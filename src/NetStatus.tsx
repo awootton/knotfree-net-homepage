@@ -9,7 +9,7 @@ type State = {
 }
 
 const defaultState: State = {
-    text: ' Not connected.',
+    text: '...',
 }
 
 type Props = {

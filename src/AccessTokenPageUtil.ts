@@ -59,16 +59,20 @@ function getSampleKnotFreeTokenRequest(): TokenRequest {
 }
 
 
-export function getFreeToken(serverName: string, done: (ok: boolean, tok: string) => any) {
-  //var serverName = util.getServerName()
-  if (process.env.NODE_ENV === "development" || serverName === 'localhost') {
-    serverName = serverName.replace("3000", "8085")
-  }
-  if (!serverName.endsWith("/")) {
-    serverName += "/"
-  }
-  //const hoststr = "http://" + util.getProfileName() + "." + serverName + "api1/getToken"
-  const hoststr = "https://" + serverName + "api1/getToken"
+export function getFreeToken(prefix: string, serverName: string, done: (ok: boolean, tok: string) => any) {
+   
+  // if (process.env.NODE_ENV === "development" || serverName === 'localhost') {
+  //   serverName = serverName.replace("3000", "8085")
+  // }
+  // if (!serverName.endsWith("/")) {
+  //   serverName += "/"
+  // }
+
+  // let prefix = "http://"
+  // if ( serverName.includes("knotfree.net")){
+  //     prefix = "https://"
+  // }
+  var hoststr = prefix + serverName + "api1/getToken"
 
   //console.log("it's fetch time again ... for a Token !!", hoststr)
   var data = getSampleKnotFreeTokenRequest()

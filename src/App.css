@@ -21,6 +21,14 @@ main {
     margin: 1px;
 }
 
+.surroundingBox {
+    max-width: 1024px;
+}
+
+.surroundingDiv {
+    max-width: 1024px;
+}
+
 .App-link {
     color: #61dafb;
 }
