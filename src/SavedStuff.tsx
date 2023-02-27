@@ -32,20 +32,15 @@ export const EmptyThingConfig: ThingConfig = {
 }
 
 export const TestThingsConfig: ThingsConfig = {
-
-    // globalConfig: {
-       // adminPublicKey: "",
-       // adminPrivateKey: "",
-     // },
     things: []
 }
 
 
-export type GlobalConfig = {
+// export type GlobalConfig = {
 
-    adminPublicKey: string // in base64 format
-    adminPrivateKey: string // in base64 format
-}
+//     adminPublicKey: string // in base64 format
+//     adminPrivateKey: string // in base64 format
+// }
 
 export type ThingsConfig = {
 
@@ -97,16 +92,16 @@ export function ValidateThingsConfig(config: ThingsConfig) {
 }
 
 var ThingStr = ""
-export function setThingsConfig(config: ThingsConfig) {
+export function saveThingsConfig(config: ThingsConfig) {
 
     ThingStr = JSON.stringify(config)
-    console.log(setThingsConfig,ThingStr)
+    // console.log(setThingsConfig,ThingStr)
     if (!publicComputer) {
         localStorage.setItem('ThingsConfig', ThingStr)
     }
 
 }
-export function getThingsConfig(): ThingsConfig {
+export function retreiveThingsConfig(): ThingsConfig {
 
     if (!publicComputer) {
         var str = localStorage.getItem('ThingsConfig')
@@ -118,7 +113,7 @@ export function getThingsConfig(): ThingsConfig {
     }
     try {
         const got: ThingsConfig = JSON.parse(ThingStr)
-        console.log("getThingsConfig ", got)
+        // console.log("getThingsConfig ", got)
         ValidateThingsConfig(got)
         return got
     } catch (e) {

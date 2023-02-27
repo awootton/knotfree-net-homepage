@@ -3,8 +3,9 @@
 // import React, { FC, ReactElement, useEffect } from 'react'
 import { ReactElement } from 'react'
 
-import * as saved from './SavedStuff'
-
+import * as  saved from './SavedStuff';
+import * as configMgr from './store/thingConfigMgr'
+import * as globalMgr from './store/allThingsConfigMgr'
 
 export interface helpLine {
     theCommand: string
@@ -58,42 +59,40 @@ export function parseCmd(cmd: string): helpLine {
 
 // searchForAdminKeys will search for any AdminpublicKey that matches and set the config.adminPublicKey and config.adminPrivateKey
 // and return true if it found one
-export function searchForAdminKeys(adminkeys: string, config: saved.ThingConfig, index: number): boolean {
+// export function searchForAdminKeys(adminkeys: string, config: saved.ThingConfig, index: number): boolean {
 
-    const allconfig: saved.ThingsConfig = saved.getThingsConfig()
+//     const allconfig: saved.ThingsConfig = globalMgr.GetGlobalConfig()
 
-    if (adminkeys.toLowerCase().includes('error')) {
-        return false
-    }
-    let admins = adminkeys.split(" ")
-    // search all the things for a matching admin key
-    for (let i = 0; i < admins.length; i++) {
+//     if (adminkeys == undefined || adminkeys.length == 0) {
+//         return false
+//     }
+//     if (adminkeys.toLowerCase().includes('error')) {
+//         return false
+//     }
+//     let admins = adminkeys.split(" ")
+//     // search all the things for a matching admin key
+//     for (let i = 0; i < admins.length; i++) {
 
-        // if (allconfig.globalConfig.adminPublicKey != undefined && allconfig.globalConfig.adminPublicKey.startsWith(admins[i])) {
-        //     config.adminPublicKey = allconfig.globalConfig.adminPublicKey
-        //     config.adminPrivateKey = allconfig.globalConfig.adminPrivateKey
-        //     return true
-        // }
-        let admin = admins[i].trim()
-        for (let j = 0; j < allconfig.things.length; j++) {
-            let thing = allconfig.things[i]
-            if (thing.adminPublicKey != undefined && thing.adminPublicKey.startsWith(admin)) {
+//         let admin = admins[i].trim()
+//         for (let j = 0; j < allconfig.things.length; j++) {
+//             let thing = allconfig.things[j]
+//             if (thing.adminPublicKey != undefined && thing.adminPublicKey.startsWith(admin)) {
 
-                // config.adminPublicKey = allconfig.globalConfig.adminPublicKey
-                // config.adminPrivateKey = allconfig.globalConfig.adminPrivateKey
+//                 // config.adminPublicKey = allconfig.globalConfig.adminPublicKey
+//                 // config.adminPrivateKey = allconfig.globalConfig.adminPrivateKey
 
-                const newconfig = { ...config, adminPublicKey: thing.adminPublicKey, adminPrivateKey: thing.adminPrivateKey }
+//                 const newconfig = { ...config, adminPublicKey: thing.adminPublicKey, adminPrivateKey: thing.adminPrivateKey }
 
-                let globalConfig = saved.getThingsConfig()
-                globalConfig.things[index] = newconfig
-                saved.setThingsConfig(globalConfig)
+//                 let globalConfig = saved.getThingsConfig()
+//                 globalConfig.things[index] = newconfig
+//                 saved.setThingsConfig(globalConfig)
 
-                return true
-            }
-        }
-    }
-    return false
-}
+//                 return true
+//             }
+//         }
+//     }
+//     return false
+// }
 
 // LinesToParagraphs will turn a string with line breaks into a list of <p>
 export function LinesToParagraphs(text: string): ReactElement[] {

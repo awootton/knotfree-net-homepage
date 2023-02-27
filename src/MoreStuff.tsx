@@ -14,6 +14,7 @@ import MyInputDialog from './dialogs/MyInputDialog'
 import StarsDialog from './dialogs/StarsDialog'
 
 import './MoreStuff.css'
+import * as allMgr from './store/allThingsConfigMgr'
 
 type Props = {
 
@@ -140,14 +141,14 @@ export const MoreStuff: FC<Props> = (props: Props): ReactElement => {
     }
 
     function getConfig(): string {
-        const config: saved.ThingsConfig = saved.getThingsConfig()
+        const config: saved.ThingsConfig = allMgr.GetGlobalConfig()
         const got = JSON.stringify(config, null, 2);
         return got
     }
 
     function resetConfig() {
         const config = saved.TestThingsConfig
-        saved.setThingsConfig(config)
+        allMgr.publish(config,true)
         setConfirm(false)
     }
 
@@ -168,15 +169,13 @@ export const MoreStuff: FC<Props> = (props: Props): ReactElement => {
         try {
             const got: saved.ThingsConfig = JSON.parse(str)
             saved.ValidateThingsConfig(got)
-            saved.setThingsConfig(got)
+            allMgr.publish(got,true)
             setErrorstr('')
         } catch (e) {
             setErrorstr("Incorrect config:" + e)
         }
-
         setIsConfigInput(false)
     }
-
 
     return (
         <>

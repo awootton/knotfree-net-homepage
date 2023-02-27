@@ -8,54 +8,85 @@ import Box from '@mui/material/Box';
 // import IconButton from '@mui/material/IconButton';
 // import MenuIcon from '@mui/icons-material/Menu';
 
-import ControlPointIcon from '@mui/icons-material/ControlPoint';
+//import ControlPointIcon from '@mui/icons-material/ControlPoint';
 //import Card from '@mui/material/Card';
 import { ThingCard } from './ThingCard';
 import * as thing from './ThingCard';
 import * as saved from './SavedStuff';
 import * as registry from './ChangeRegistry';
-import * as utils from './Utils';
+import * as allMgr from './store/allThingsConfigMgr'
+import * as utils from './utils';
 
 import './Things.css'
 
-import TextField from '@mui/material/TextField';
+//import TextField from '@mui/material/TextField';
 
 
-// type State = {
-//     config: saved.ThingsConfig
-// }
+type State = {
+    config: saved.ThingsConfig
+    uniqueid: string
+    refreshCount: number
+}
 
 interface Props {
-    // thingConfig : saved.ThingsConfig
 }
 
 export const Things: FC<Props> = (props: Props): ReactElement => {
 
-    let c = saved.getThingsConfig()
+    const startingState: State = {
+        config: allMgr.GetGlobalConfig(),
+        refreshCount: 0,
+        uniqueid: utils.randomString(24),
 
-    if ( c.things.length == 0) {
-        console.log("Things.tsx: no things, adding one")
-        c.things.push(saved.EmptyThingConfig)
-        saved.setThingsConfig(c)
     }
+    const [state, setState] = React.useState(startingState);
 
-    // console.log("Things config",c)
+    // console.log("Things render top config",state)
 
-    const [config, setConfig] = React.useState(c);
 
     useEffect(() => {
         // subscribe to changes in ThingsConfig
-        registry.SetSubscripton("ThingsChangeNotification", (name: string, arg: any) => {
-            let c = saved.getThingsConfig()
-            setConfig(c)
+        // registry.SetSubscripton("ThingsChangeNotification", (name: string, arg: any) => {
+        //     let c = saved.getThingsConfig()
+        //     const newState:State = {config:c,refreshCount: state.refreshCount + 1}
+        //     console.log("Things render new state",newState)
+        //     setState(newState)
+        // })
+
+        allMgr.subscribe(state.uniqueid, (newConfig: saved.ThingsConfig) => {
+            const newState: State = {
+                config: newConfig,
+                refreshCount: state.refreshCount + 1,
+                uniqueid: state.uniqueid
+            }
+            setState(newState)
         })
+
+
+
+        if (state.config.things.length == 0) {
+            console.log("Things.tsx: no things, adding one")
+            const newState: State = {
+                config: {
+                    ...state.config,
+                    things: [saved.EmptyThingConfig]
+                },
+                refreshCount: state.refreshCount + 1,
+                uniqueid: state.uniqueid
+            }
+            setState(newState)
+        }
+
+        return () => {
+            allMgr.unsubscribe(state.uniqueid)
+        }
     })
 
-    function textClicked(e: React.ChangeEvent<HTMLInputElement>) {
-        const str = e.currentTarget.value
-        currentPassword = str
-    }
-    let currentPassword = ''
+    // function textClicked(e: React.ChangeEvent<HTMLInputElement>) {
+    //     const str = e.currentTarget.value
+    //     currentPassword = str
+    // }
+    // let currentPassword = ''
 
     // function adminKeyBlur(e: any) { // this sucks. Fixme. It's too hard to get the type
     //     let str = e.target.value as string
@@ -81,7 +112,7 @@ export const Things: FC<Props> = (props: Props): ReactElement => {
     // }
 
     // let adminKeyshort = state.globalConfig.adminPublicKey
-     
+
 
     // // console.log("state.globalConfig.adminPublicKey is" , adminKeyshort)
     // if ( adminKeyshort != '') {
@@ -91,18 +122,20 @@ export const Things: FC<Props> = (props: Props): ReactElement => {
     function getThingsJsx(): ReactElement {
 
         let componentArray = []
-        let c = saved.getThingsConfig()
+        let c = state.config
         for (let i = 0; i < c.things.length; i++) {
-            const dev = c.things[i]
+            const thingConfig = c.things[i]
+
             const someprops: thing.Props = {
                 showPubkey: false,
                 showAdminKey: false,
-                config: dev,
-                index: i
+                config: thingConfig,
+                index: i,
+                version: state.refreshCount
             }
 
             let somejsx = (
-                <ThingCard key={dev.longName + "_" + i} {...someprops} />
+                <ThingCard key={thingConfig.longName + "_" + i} {...someprops} />
             )
             componentArray.push(somejsx)
         }
@@ -113,28 +146,28 @@ export const Things: FC<Props> = (props: Props): ReactElement => {
         )
     }
 
-    function onAddClick() {
-        console.log("onAddClick")
-        const newConfig: saved.ThingConfig = {
-            adminPublicKey: "",// in base64 format, if "" inherit from parent
-            adminPrivateKey: "", // in base64 format, if "" inherit from parent
-            thingPublicKey: "", // in base64 format
+    // function onAddClick() {
+    //     console.log("onAddClick")
+    //     const newConfig: saved.ThingConfig = {
+    //         adminPublicKey: "",// in base64 format, if "" inherit from parent
+    //         adminPrivateKey: "", // in base64 format, if "" inherit from parent
+    //         thingPublicKey: "", // in base64 format
 
-            longName: "",
-            shortName: "",
+    //         longName: "",
+    //         shortName: "",
 
-            commandString: "",
-            cmdArgCount: 0,
-            cmdDescription: "",
-            stars:0
-        }
-        let c = saved.getThingsConfig()
-       // c.things.push(newConfig)
-        c.things.unshift(newConfig)
-        saved.setThingsConfig(c)
-        // now notify our parent
-        registry.PublishChange("ThingsChangeNotification", "nothing")
-    }
+    //         commandString: "",
+    //         cmdArgCount: 0,
+    //         cmdDescription: "",
+    //         stars:0
+    //     }
+    //     let c = saved.getThingsConfig()
+    //    // c.things.push(newConfig)
+    //     c.things.unshift(newConfig)
+    //     saved.setThingsConfig(c)
+    //     // now notify our parent
+    //     registry.PublishChange("ThingsChangeNotification", "nothing")
+    // }
 
     // this needs to be deleted
     // function gotPassword(){
@@ -168,7 +201,7 @@ export const Things: FC<Props> = (props: Props): ReactElement => {
 
     return (
         <Box className="container"  >
- 
+
             {/* <div className="title" >
 
                 <span className='adminSpan' >

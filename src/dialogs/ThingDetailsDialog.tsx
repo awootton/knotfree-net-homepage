@@ -26,11 +26,13 @@ import * as saved from '../SavedStuff';
 import * as pipeline from '../Pipeline';
 import * as app from '../App';
 import * as utilsTsx from '../Utils-tsx';
-import * as utils from '../Utils';
+import * as utils from '../utils';
 import * as types from '../Types';
 import * as helpCache from '../store/helpCache'
 import * as adminhintCache from '../store/adminhintCache'
-import * as registry from '../ChangeRegistry'
+
+import * as configMgr from '../store/thingConfigMgr'
+import * as allMgr from '../store/allThingsConfigMgr'
 
 
 import '../ThingCard.css'
@@ -42,24 +44,21 @@ type Props = {
     config: saved.ThingConfig
     onConfirm: () => any
     index: number // index of the thing in the list
-    //  label: string // the label of the text field
-    //  default: string // default text in the input
 }
 
 type State = {
     //  config: saved.ThingConfig
-    pendingCommandNonc: string,// a correlation id for an mqtt publish
+    pendingCommandNonc: string,// a correlation id for an mqtt publish. fixme
     returnValue: string,
-    // pendingHelpNonc: string,
     uniqueid: string
 }
 
 
 export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
 
-    
-    //const [config, setConfig] = React.useState(props.config)
-    const [config, setConfig] = React.useState(saved.getThingsConfig().things[props.index])
+
+    // nobody calls setConfig but the cb in useEffect. RULz
+    const [config, setConfig] = React.useState(props.config)
 
     const [startedPubkFetch, setStartedPubkFetch] = React.useState(false)
 
@@ -87,11 +86,13 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
     function fetchPubk() {
 
         const receivePubk = (reply: types.PublishReply) => {
-
             var message: string = reply.message.toString()
             message = message.trim()
-
-            setConfig({ ...config, thingPublicKey: message })
+            const newConfig = {
+                ...config,
+                thingPublicKey: message
+            }
+            configMgr.publish(props.index,newConfig)
         }
 
         if (config.longName === '') {
@@ -114,8 +115,11 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
 
             var message: string = reply.message.toString()
             message = message.trim()
-
-            setConfig({ ...config, shortName: message })
+            configMgr.publish(props.index,
+                {
+                    ...config,
+                    shortName: message
+                })
         }
 
         if (config.longName === '') {
@@ -131,29 +135,6 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
         }
         pipeline.Publish(request)
     }
-
-
-    // function fetchAdminkey() {
-
-    //     const receiveAdminHint = (reply: types.PublishReply) => {
-
-    //         if (utilsTsx.searchForAdminKeys(reply.message.toString().trim(), config, props.index)) {
-    //             setConfig({ ...config })
-    //             return
-    //         }
-    //         // else someone will have to type it in.
-    //     }
-
-    //     let request: types.PublishArgs = {
-    //         ...types.EmptyPublishArgs,
-    //         ...config,
-    //         cb: receiveAdminHint,
-    //         serverName: app.serverName,
-    //         commandString: 'get admin hint'
-    //     }
-    //     console.log("ThingDetailsDialog useEffect publish", request)
-    //     pipeline.Publish(request)
-    // }
 
     const gotReturnValue = (reply: types.PublishReply) => {
 
@@ -192,10 +173,7 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
 
     useEffect(() => {
 
-        // if (startedAdminHintFetch == false && config.longName !== '' && config.adminPublicKey === '') {
-        //     setStartedAdminHintFetch(true)
-        //     fetchAdminkey()
-        // }
+
         if (startedPubkFetch == false && config.longName !== '' &&
             (config.thingPublicKey === '' || config.thingPublicKey.toLowerCase().includes('error'))) {
             setStartedPubkFetch(true)
@@ -206,8 +184,8 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
             fetchShortName()
         }
         if (state.pendingCommandNonc !== '' && config.longName !== '') {
-            // console.log("dev card sending ", state.pendingCommandNonc)
-            console.log("dev card sending ", config.commandString)
+           
+            console.log("thing details card sending ", config.commandString)
 
             let request: types.PublishArgs = {
                 ...types.EmptyPublishArgs,
@@ -220,17 +198,6 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
             pipeline.Publish(request)
         }
 
-        // if (state.pendingHelpNonc !== '' && config.longName !== '') {
-        //     let request: types.PublishArgs = {
-        //         ...types.EmptyPublishArgs,
-        //         ...config,
-        //         cb: gotHelpValue,
-        //         serverName: app.serverName,
-        //         commandString: 'help'
-        //     }
-        //     pipeline.Publish(request)
-        // }
-
         if (help === '' && config.longName !== '') {
             helpCache.getHelp(config.longName, state.uniqueid, (h: string) => {
                 let rparts = h.split('\n')
@@ -240,33 +207,23 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
         }
 
         if (adminhint === '' && config.longName !== '') {
-            let newConfig = { ...config }
             adminhintCache.getAdminhint(config.longName, state.uniqueid, (h: string) => {
-                //  search for matching admin key 
-                if (utilsTsx.searchForAdminKeys(h, newConfig, props.index)) {
-                    //console.log('receiveAdminHintInfo found admin key')
-                    let globalConfig = saved.getThingsConfig()
-                    globalConfig.things[props.index] = newConfig
-                    saved.setThingsConfig(globalConfig)
-                    setConfig({ ...newConfig })
-                }
+                // it would be nice to tell all the other things to update their adminhint
                 setAdminhint(h);
             })
         }
 
+        configMgr.subscribe(props.index, state.uniqueid, (newConfig: saved.ThingConfig) => {
+            setConfig(newConfig)
+        })
+
         return function cleanup() {
             helpCache.remove(config.longName, state.uniqueid);
             adminhintCache.remove(config.longName, state.uniqueid);
+            configMgr.unsubscribe(props.index, state.uniqueid)
         };
     })
 
-    // long name
-    // admin password
-    // thing password
-    // 
-    // command + description 
-    // args
-    // result
 
     function adminPass(): ReactElement {
 
@@ -276,7 +233,7 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
                     onChange={changeAdminPass}
                     // id="outlined-helperText"
                     label={"Admin password"}
-                    defaultValue={config.adminPublicKey.length > 0 ? "********" : "Type admin password here."}
+                    defaultValue={config.adminPublicKey.length > 0 ? "********" : ""}
                     helperText=""
                     fullWidth
                 />
@@ -285,10 +242,25 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
     }
 
     function changeLongName(e: React.ChangeEvent<HTMLInputElement>) {
-        const str = e.currentTarget.value
-        console.log("changeLongName setConfig", { ...config, longName: str })
-        setConfig({ ...config, longName: str })
     }
+
+    // changeThingName changes the longName and when that happens everything else changes. setLongName
+    function changeThingName(e: any) { // on the blur/unfocus
+        const str: string = e.target.value
+        console.log("new Thing name", str)
+        let newName: string = str
+
+        const newConfig: saved.ThingConfig = {
+            ...saved.EmptyThingConfig,
+            longName: newName,
+        }
+
+        configMgr.publish(props.index, newConfig)
+
+        setHelp('')
+        setCommands([])
+    }
+
 
     function confirmMe() {
         props.onConfirm()// config)
@@ -304,71 +276,45 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
 
 
     function handleSetAdminPassClick() {
+
         // calc the admin public and private keys
-        console.log("handleSetAdminPassClick", localAdminPass)
-        // export function getBase64FromPassphrase(phrase: string): [string, string] {
+
         const [pub, priv] = utils.getBase64FromPassphrase(localAdminPass)
 
         console.log("handleSetAdminPassClick pub", pub)
 
-        const newConfig = { ...config }
-        newConfig.adminPublicKey = pub
-        newConfig.adminPrivateKey = priv
-        if ( adminhint !== '' ) {
-            const allConfig = saved.getThingsConfig()
-            let admins = adminhint.split(" ")
-            // search all the things for a matching admin key
-            var haveMatch = false 
-            for (let i = 0; i < admins.length; i++) {
-                const admin = admins[i]
-                for (let j = 0; j < allConfig.things.length; j++) {
-                    if ( j == props.index ) 
-                        continue
-                    if ( allConfig.things[j].longName === config.longName) {
-                        haveMatch = true
-                        allConfig.things[j].adminPublicKey = pub
-                        allConfig.things[j].adminPrivateKey = priv
-                    }
-                }
-            }
-            if ( haveMatch ) {
-                allConfig.things[props.index] = newConfig
-                saved.setThingsConfig(allConfig)
-                // refresh everything
-                registry.PublishChange("ThingsChangeNotification", "on duplicate")
-            }
-        }  else {
-            console.log("no admin hint")
-            const allConfig = saved.getThingsConfig()
-            allConfig.things[props.index] = newConfig
-            saved.setThingsConfig(allConfig)
-            setConfig(newConfig)
-        }         
+        const newConfig = { ...config, adminPublicKey: pub, adminPrivateKey: priv }
 
+        const allConfig = allMgr.GetGlobalConfig()
+
+        // search all the things for a matching long name
+        // update them all 
+
+        for (let j = 0; j < allConfig.things.length; j++) {
+            if (allConfig.things[j].longName === config.longName) {
+                const newConfig = {
+                    ...allConfig.things[j],
+                    adminPublicKey: pub, 
+                    adminPrivateKey: priv
+                }
+
+                configMgr.publish(props.index, newConfig)
+            }
+        }
     }
 
     const handleSelectClick = (event: any) => {
         console.log("handleSelectClick", event)
         setSelectUp(event.currentTarget);
-        // setOpenNewPost(true);
-        // handleClose()
-        // if (commands.length === 0 && state.pendingHelpNonc === '') {
-        //     let nonc = utils.randomString(24)
-        //     console.log("do load help nonc", nonc) // fixme: use a cache
-        //     let newState: State = {
-        //         ...state,
-        //         pendingHelpNonc: nonc,
-        //     }
-        //     setState(newState)
     }
 
 
     var menuitems: ReactElement[] = []
-    // handleSelectSelect handles a click on the help popup menu
-    const handleSelectSelect = (event: any) => {
+    // handleSelectHelp handles a click on the help popup menu
+    const handleSelectHelp = (event: any) => {
 
-        console.log("handleSelectSelect", event)
-        console.log("handleSelectSelect id", event.target.id)
+        console.log("handleSelectHelp", event)
+        console.log("handleSelectHelp id", event.target.id)
         let i = +event.target.id
         let cmd = commands[i]
 
@@ -377,27 +323,20 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
             return;//bad selection
         }
 
-        let c = saved.getThingsConfig()
-        c.things[props.index].commandString = h.theCommand
-        c.things[props.index].cmdArgCount = h.argCount
-        c.things[props.index].cmdDescription = h.description
-        c.things[props.index].stars = h.stars
-        saved.setThingsConfig(c)
+        const newConfig = { ...config, commandString: h.theCommand, cmdArgCount: h.argCount, cmdDescription: h.description, stars: h.stars }
 
-        setConfig(c.things[props.index])
+        configMgr.publish(props.index,newConfig)
 
         // also issue the command
         setArgs([])
         if (h.argCount == 0) {
 
             let nonc = utils.randomString(24)
-
             const newState: State = {
                 ...state,
-                pendingCommandNonc: nonc, // also issue the command
+                pendingCommandNonc: nonc, // also issue the command. this is a hack
                 returnValue: "-pending-"
             }
-
             setState(newState)
         } else {
             const newState: State = {
@@ -429,7 +368,7 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
             const part = commands[i]
             const istr = '' + i
             const jsx = (
-                <MenuItem key={istr} id={istr} onClick={handleSelectSelect}>{part}</MenuItem>
+                <MenuItem key={istr} id={istr} onClick={handleSelectHelp}>{part}</MenuItem>
             )
             menuitems.push(jsx)
         }
@@ -494,11 +433,12 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
                 </IconButton>
             </Box>
             <DialogContent>
-                {/* <Typography>{'props . body'}</Typography> */}
+
                 <div className='detailsDiv'>
                     <span>
                         <TextField
                             onChange={changeLongName}
+                            onBlur={changeThingName}
                             // id="outlined-helperText"
                             label={"Long name"}
                             defaultValue={config.longName.length > 0 ? config.longName : "Step One. Add long name here."}
@@ -518,7 +458,7 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
                     onChange={changeLongName}
                     // id="outlined-helperText"
                     label={"Thing password"}
-                    defaultValue={config.thingPublicKey.length > 0 ? "********" : "Add thing password here."}
+                    defaultValue={config.thingPublicKey.length > 0 ? "********" : ""}
                     helperText=""
                     fullWidth
                 /> */}
@@ -545,9 +485,6 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
                 </div>
                 <div className='cardRow2'>
 
-                    {/* <span className='cmdSpan2'>Push this to choose command: </span>
-                    <span className='cmdpulldown'  > <ArrowDropDownIcon onClick={handleSelectClick} style={{ fontSize: "96px" }} /></span> */}
-
                     <button type="button" onClick={handleSelectClick} className='cmdButton' >Choose command</button>
 
                 </div>
@@ -558,13 +495,26 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
                         <div className='overlay3' >
                             Command:
                         </div>
-                        {/* <span className='cmd' >{txtStandin('The command','get time',true)}</span> */}
+
                         <button type="button" onClick={doCommandAttempt} className='cmdButton' >{config.commandString}</button>
-                        <div className='bottomoverlay2' >
+                        {/* <div className='bottomoverlay2' >
                             {config.cmdDescription}
+                        </div> */}
+                    </span>
+                </div>
+                <div className='spacingDiv'>&#160;</div>
+                <div className='detailsDiv'>
+                    <span className='cmdSpan'>
+                        <div className='overlay3' >
+                            Description:
+                        </div>
+
+                        <div className='resultDiv' >
+                            {config.cmdDescription.trim()}
                         </div>
                     </span>
                 </div>
+
                 <div className='cardRow2'>
                     {makeArgs()}
                 </div>
@@ -603,11 +553,13 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
 
             </Menu>
 
-            {help !== '' ? 'hh ' : ' '}
-            {adminhint}
-            {config.adminPublicKey !== '' ? ' kk' : ''}
-            {config.shortName !== '' ? ' ss' : ''}
-            {config.thingPublicKey !== '' ? ' pubk' : ''}
+            <div className='tinyText'>
+                {help.length > 0 ? 'he ' : ' '}
+                {adminhint.length > 0 ? 'ah ' : ' '}
+                {config.adminPublicKey.length > 0 ? ' ak' : ''}
+                {config.shortName.length > 0 ? ' sn' : ''}
+                {config.thingPublicKey.length > 0 ? ' pk' : ''}
+            </div>
 
         </Dialog>
     );

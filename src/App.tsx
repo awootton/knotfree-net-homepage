@@ -22,7 +22,7 @@ import * as saved from './SavedStuff'
 
 import * as mqtt from "./MqttClient"
 import * as more from "./MoreStuff"
-import * as utils from './Utils'
+import * as utils from './utils'
 
 import Link from '@mui/material/Link';
 

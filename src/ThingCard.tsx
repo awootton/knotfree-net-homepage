@@ -1,5 +1,4 @@
 
-
 import React, { FC, ReactElement, useEffect } from 'react'
 import Box from '@mui/material/Box';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -15,8 +14,8 @@ import CircularProgress from '@mui/material/CircularProgress';
 import './ThingCard.css'
 
 import * as saved from './SavedStuff'
-import * as utils from './Utils'
-import * as registry from './ChangeRegistry'
+import * as utils from './utils'
+
 import * as  utilsTsx from './Utils-tsx';
 
 import * as types from './Types';
@@ -26,9 +25,11 @@ import * as app from './App'
 import * as detailsDialog from './dialogs/ThingDetailsDialog'
 import * as helpCache from './store/helpCache'
 import * as adminhintCache from './store/adminhintCache'
+import * as configMgr from './store/thingConfigMgr'
+import * as allMgr from './store/allThingsConfigMgr'
+
 
 type State = {
-    //  config: saved.ThingConfig
     pendingCommandNonc: string,// a correlation id for an mqtt publish. unused?
     returnValue: string,
     uniqueid: string
@@ -38,11 +39,10 @@ export interface Props {
 
     showPubkey: boolean
     showAdminKey: boolean
-    // globalConfig: saved.GlobalConfig
     config: saved.ThingConfig
-    index: number
+    index: number,
+    version: number,
 }
-
 
 export const ThingCard: FC<Props> = (props: Props): ReactElement => {
 
@@ -58,9 +58,10 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
 
     const [state, setState] = React.useState(defaultState);
 
-    // always replace the config in globals and save it on setConfig
-    // FIXME: this is a hack. We should be using a global state manager
     const [config, setConfig] = React.useState(props.config);
+
+    const index = props.index
+
 
     // this is for the right menu
     const [menuUp, setMenuUp] = React.useState(null);
@@ -95,15 +96,11 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
         var message: string = reply.message.toString()
         message = message.trim()
 
-        let globalConfig = saved.getThingsConfig()
-        globalConfig.things[props.index].thingPublicKey = message
-        saved.setThingsConfig(globalConfig)
-
-        const newState: saved.ThingConfig = {
-            ...config,
-            thingPublicKey: message,
+        const newConfig : saved.ThingConfig = { 
+            ...config, 
+            thingPublicKey: message 
         }
-        setConfig(newState)
+        configMgr.publish(index, newConfig)
     }
     const receiveShortName = (reply: types.PublishReply) => {
 
@@ -113,53 +110,12 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
         if (message === config.shortName) {
             return
         }
-
-        const newState: saved.ThingConfig = {
+        const newConfig: saved.ThingConfig = {
             ...config,
             shortName: message,
         }
-
-        let globalConfig = saved.getThingsConfig()
-        globalConfig.things[props.index] = newState
-        saved.setThingsConfig(globalConfig)
-
-        setConfig(newState)
+        configMgr.publish(index, newConfig)
     }
-    // const receiveAdminHintInfo = (reply: types.PublishReply) => {
-
-    //     var message: string = reply.message
-    //     message = message.trim()
-
-    //     // search for matching admin key 
-    //     if (utilsTsx.searchForAdminKeys(message, config, props.index)) {
-    //         // console.log('receiveAdminHintInfo found admin key')
-    //         let globalConfig = saved.getThingsConfig()
-    //         globalConfig.things[props.index] = config
-    //         saved.setThingsConfig(globalConfig)
-    //         setConfig({ ...config })
-    //     }
-    //     setAdminHint(message)
-    // }
-
-    // function heartBeat() {
-
-    //     let needAdminHint = adminHint === '' || adminHint.toLowerCase().includes('error')
-    //     if (needAdminHint && config.longName !== '') {
-
-    //         console.log('heartBeat ordering admin hint ', props.index)
-
-    //         let request: types.PublishArgs = {
-    //             ...types.EmptyPublishArgs,
-    //             ...config,
-    //             cb: receiveAdminHintInfo,
-    //             serverName: app.serverName,
-    //             commandString: 'get admin hint'
-    //         }
-
-    //         pipeline.Publish(request)
-    //     }
-    // }
-
 
     useEffect(() => {
 
@@ -168,12 +124,12 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
         if (config.longName === '' || adminhint === '') {
             longNameIsGood = false
         }
-        
-        // todo: this is a hack. need to fix the state management
+
+        // todo: this is a hack.
         if ((config.thingPublicKey === '' || config.thingPublicKey.toLowerCase().includes('error'))
             && longNameIsGood) {
             // order it up
-            console.log('ordering pubk ', props.index)
+            console.log('ordering pubk ', index)
             let request: types.PublishArgs = {
                 ...types.EmptyPublishArgs,
                 ...config,
@@ -184,11 +140,11 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
             pipeline.Publish(request)
         }
 
-        // FIXME: this is a hack. need to fix the state management
+        // FIXME: this is a hack. 
         if ((config.shortName === '' || config.shortName.includes('error'))
-             && longNameIsGood) {
+            && longNameIsGood) {
 
-            console.log('ordering short name ', props.index)
+            console.log('ordering short name ', index)
 
             let request: types.PublishArgs = {
                 ...types.EmptyPublishArgs,
@@ -199,7 +155,7 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
             }
 
             pipeline.Publish(request)
-       }
+        }
 
         if (help === '' && longNameIsGood) {
             helpCache.getHelp(config.longName, state.uniqueid, (h: string) => {
@@ -213,18 +169,10 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
 
             adminhintCache.getAdminhint(config.longName, state.uniqueid, (h: string) => {
 
-                if ( h === '' ) {
-                    // try again in 5 seconds
-                    setTimeout( () => {setAdminhint(h)}, 5000)
+                if (h === '') {
+                    // try again in 5 seconds until we get one 
+                    setTimeout(() => { setAdminhint(h) }, 5000)
                     return
-                }
-                //  search for matching admin key 
-                if (config.adminPublicKey === '') {
-                    if (utilsTsx.searchForAdminKeys(h, config, props.index)) {
-                        console.log('receiveAdminHintInfo found admin key')
-                        let globalConfig = saved.getThingsConfig()
-                        setConfig(globalConfig.things[props.index])
-                    }
                 }
                 setAdminhint(h)
             })
@@ -234,9 +182,16 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
             // console.log("dev card sending ", state.pendingCommandNonc)
             console.log("dev card sending ", config.commandString)
 
-            let ourArgs = args
+            let ourArgs : string[] = [
+               ... args
+            ]
             if (config.cmdArgCount === 0) {
                 ourArgs = []
+            } else {
+                // we have to quote them 
+                for (let i = 0; i < ourArgs.length; i++) {
+                    ourArgs[i] = '"' + ourArgs[i] + '"'
+                }
             }
 
             let request: types.PublishArgs = {
@@ -249,19 +204,27 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
             pipeline.Publish(request)
         }
 
+        configMgr.subscribe(index,state.uniqueid, (newConfig: saved.ThingConfig) => {
+            console.log("thing card got new config", newConfig)
+            setConfig(newConfig)
+        })
+
         return function cleanup() {
             helpCache.remove(config.longName, state.uniqueid);
             adminhintCache.remove(config.longName, state.uniqueid);
+            configMgr.unsubscribe(index,state.uniqueid)
         };
     })
 
     function textClicked(e: React.ChangeEvent<HTMLInputElement>) {
-        const str = e.currentTarget.value
-        // console.log("textClicked", str)
+        let str = e.currentTarget.value
+        str = str.toLowerCase()
+        e.currentTarget.value = str
     }
 
     function argTextChanged(e: React.ChangeEvent<HTMLInputElement>) {
-        const str = e.currentTarget.value
+        let str = e.currentTarget.value
+        str = str.toLowerCase()
         let id: number = parseInt(e.currentTarget.id)
         const arrlen: number = args.length > id ? args.length : id
 
@@ -282,11 +245,7 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
             ...saved.EmptyThingConfig,
             longName: newName,
         }
-
-        let c = saved.getThingsConfig()
-        c.things[props.index] = newConfig
-        saved.setThingsConfig(c)
-        setConfig(newConfig)
+        configMgr.publish(index, newConfig)
         setHelp('')
         setCommands([])
     }
@@ -319,12 +278,9 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
         const newConfig: saved.ThingConfig = {
             ...config
         }
-        let c = saved.getThingsConfig()
-        //c.things.push(newConfig)
-        c.things.splice(props.index + 1, 0, newConfig);
-        saved.setThingsConfig(c)
-
-        registry.PublishChange("ThingsChangeNotification", "on duplicate")
+        let c = allMgr.GetGlobalConfig()
+        c.things.splice(index + 1, 0, newConfig);
+        allMgr.publish(c,true)
     };
 
     const handleMenuNew = (event: any) => {
@@ -334,12 +290,9 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
         const newConfig: saved.ThingConfig = {
             ...saved.EmptyThingConfig
         }
-        let c = saved.getThingsConfig()
-        //c.things.push(newConfig)
-        c.things.splice(props.index + 1, 0, newConfig);
-        saved.setThingsConfig(c)
-
-        registry.PublishChange("ThingsChangeNotification", "on duplicate")
+        let c = allMgr.GetGlobalConfig()
+        c.things.splice(index + 1, 0, newConfig);
+        allMgr.publish(c,true)
     };
 
 
@@ -347,12 +300,9 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
 
         setMenuUp(null);
 
-        let c = saved.getThingsConfig()
-        c.things.splice(props.index, 1)
-        saved.setThingsConfig(c)
-
-        // now notify our parent to refresh everything. Everyone gets new indices.
-        registry.PublishChange("ThingsChangeNotification", "nothing")
+        let c = allMgr.GetGlobalConfig()
+        c.things.splice(index, 1)
+        allMgr.publish(c,true)
 
     };
 
@@ -367,32 +317,23 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
 
         setMenuUp(null)
 
-        // const newConfig: saved.ThingConfig = {
-        //     ...config
-        // }
-        let c = saved.getThingsConfig()
-        if (props.index > 0) {
-            let me = c.things.splice(props.index, 1);
-            c.things.splice(props.index - 1, 0, me[0]);
+        let c = allMgr.GetGlobalConfig()
+        if (index > 0) {
+            let me = c.things.splice(index, 1);
+            c.things.splice(index - 1, 0, me[0]);
         }
-        saved.setThingsConfig(c)
-        // now notify our parent
-        registry.PublishChange("ThingsChangeNotification", "on menu up")
-
+        allMgr.publish(c,true)
     };
 
     const handleMenuDown = (event: any) => {
 
         setMenuUp(null);
-        let c = saved.getThingsConfig()
-
-        if (props.index + 1 < c.things.length) {
-            let me = c.things.splice(props.index, 1);
-            c.things.splice(props.index + 1, 0, me[0]);
+        let c = allMgr.GetGlobalConfig()
+        if (index + 1 < c.things.length) {
+            let me = c.things.splice(index, 1);
+            c.things.splice(index + 1, 0, me[0]);
         }
-        saved.setThingsConfig(c)
-        // now notify our parent
-        registry.PublishChange("ThingsChangeNotification", "on menu down")
+        allMgr.publish(c,true)
     };
 
 
@@ -403,22 +344,11 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
     const handleSelectClick = (event: any) => {
         console.log("handleSelectClick", event)
         setSelectUp(event.currentTarget);
-        // setOpenNewPost(true);
-        //  handleClose()
-        // if (commands.length === 0 && state.pendingHelpNonc === '') {
-        //     let nonc = utils.randomString(24)
-        //     console.log("do load help nonc", nonc) // fixme: use a cache
-        //     let newState: State = {
-        //         ...state,
-        //         pendingHelpNonc: nonc,
-        //     }
-        //     setState(newState)
-        // }
     };
 
-    const handleSelectSelect = (event: any) => {
-        console.log("handleSelectSelect", event)
-        console.log("handleSelectSelect id", event.target.id)
+    const handleSelectMenu = (event: any) => {
+        console.log("handleSelectMenu", event)
+        console.log("handleSelectMenu id", event.target.id)
         let i = +event.target.id
         let cmd = commands[i]
 
@@ -426,15 +356,14 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
         if (h.theCommand === '') {
             return;//bad selection
         }
-
-        let c = saved.getThingsConfig()
-        c.things[props.index].commandString = h.theCommand
-        c.things[props.index].cmdArgCount = h.argCount
-        c.things[props.index].cmdDescription = h.description
-        c.things[props.index].stars = h.stars
-        saved.setThingsConfig(c)
-
-        setConfig(c.things[props.index])
+        const newConfig: saved.ThingConfig = {
+            ...config,
+            commandString: h.theCommand,
+            cmdArgCount: h.argCount,
+            cmdDescription: h.description,
+            stars: h.stars,
+        }
+        configMgr.publish(index , newConfig)
 
         // also issue the command
         if (h.argCount == 0) {
@@ -443,13 +372,6 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
 
             const newState: State = {
                 ...state,
-                // config: {
-                //     ...state.config,
-                //     commandString: h.theCommand,
-                //     cmdArgCount: h.argCount,
-                //     cmdDescription: h.description,
-                //     stars: h.stars
-                // },
                 pendingCommandNonc: nonc, // also issue the command
                 returnValue: "-pending-"
             }
@@ -458,14 +380,6 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
         } else {
             const newState: State = {
                 ...state,
-                // config: {
-                //     ...state.config,
-                //     commandString: h.theCommand,
-                //     cmdArgCount: h.argCount,
-                //     cmdDescription: h.description,
-                //     stars: h.stars
-                // },
-                // nope pendingCommandNonc: nonc, // also issue the command
                 returnValue: ""
             }
 
@@ -493,26 +407,11 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
             const part = commands[i]
             const istr = '' + i
             const jsx = (
-                <MenuItem key={istr} id={istr} onClick={handleSelectSelect}>{part}</MenuItem>
+                <MenuItem key={istr} id={istr} onClick={handleSelectMenu}>{part}</MenuItem>
             )
             menuitems.push(jsx)
         }
     }
-
-    // function getThingInfo() {
-    //     if (info.pubk === '') { // && info.adminHint === ''
-    //         return (
-    //             <p className='error'>offline</p>
-    //         )
-    //     }
-    //     return (
-    //         <>
-    //             {/* <p>About: {info.about}</p>
-    //             <p>Public key: {info.pubk}</p>
-    //             <p>Admin hint: {info.adminHint}</p> */}
-    //         </>
-    //     )
-    // }
 
     function makeArgs() {
         var args: ReactElement[] = []
@@ -539,9 +438,12 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
         return args
     }
 
+    let trimmedDescription = config.cmdDescription
+    if (trimmedDescription.length > 18) {
+        trimmedDescription = trimmedDescription.substring(0, 18) + '...'
+    }
 
     return (
-
         <Card variant="outlined" className='devCard'>
             <div className='cardRow1' >
                 <span className='commandInputSpan'>
@@ -573,7 +475,7 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
                     </div>
                     <button type="button" onClick={doCommandAttempt} className='cmdButton' >{config.commandString}</button>
                     <div className='bottomoverlay' >
-                        {config.cmdDescription}
+                        {trimmedDescription}
                     </div>
 
                 </span>
@@ -609,7 +511,6 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
                 <MenuItem onClick={handleMenuUp}>Move up</MenuItem>
                 <MenuItem onClick={handleMenuDown}>Move down</MenuItem>
 
-
             </Menu>
 
             <Menu
@@ -630,31 +531,25 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
                 onConfirm={ThingDetailsDialogConfirm}
                 title={'Details for thing: ' + config.longName}
                 config={config}
-                index={props.index}
+                index={index}
             />
-
-            {help !== '' ? 'hh ' : ' '}
-            {adminhint}
-            {config.adminPublicKey !== '' ? ' kk' : ''}
-            {config.shortName !== '' ? ' ss' : ''}
-            {config.thingPublicKey !== '' ? ' pubk' : ''}
+            <div className='tinyText'>
+                {help.length > 0 ? 'he ' : ' '}
+                {adminhint.length > 0 ? 'ah ' : ' '}
+                {config.adminPublicKey.length > 0 ? ' ak' : ''}
+                {config.shortName.length > 0 ? ' sn' : ''}
+                {config.thingPublicKey.length > 0 ? ' pk' : ''}
+                {" " + props.version}
+            </div>
         </Card>
 
     )
 
     // we'll just assume that the ThingDetailsDialog changed the state so refresh everything.
     function ThingDetailsDialogConfirm() {
-
+        console.log('ThingDetailsDialogConfirm')
         setArgs([])
-
-        // // record the change
-        // let globalConfig = saved.getThingsConfig()
-        // globalConfig.things[props.index] = newconfig
-        // saved.setThingsConfig(globalConfig)
-        // setConfig({ ...newconfig })
-
         setIsDetails(false)
-        registry.PublishChange("ThingsChangeNotification", "");
     }
 }
 

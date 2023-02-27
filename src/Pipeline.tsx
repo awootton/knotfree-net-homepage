@@ -2,7 +2,7 @@
 
 //import * as nacl from 'tweetnacl-ts'
 import { Buffer } from 'buffer'
-import * as utils from './Utils'
+import * as utils from './utils'
 import * as app from './App'
 //import * as saved from './SavedStuff'
 import { PublishArgs, PublishReply } from './Types'
@@ -255,8 +255,17 @@ function EncryptReturn(reply: PublishReply) {
         //     RetryReturn(reply)
         //     return
         // }
-        // remove the '='
-        let localmessage = reply.message.substring(1)
+        let localmessage = reply.message
+        if (localmessage.startsWith('ERROR')) {
+            console.log('got error from device', localmessage)
+            reply.message = 'ERROR from device:' + localmessage
+            RetryReturn(reply)
+            return
+        }
+        if (localmessage.startsWith('=')) {
+            // remove the '='
+            localmessage = reply.message.substring(1)
+        }
         console.log('localmessage', localmessage, 'decrypt nonc', reply.nonce)
 
         const theirPubk = Buffer.from(reply.thingPublicKey, 'base64')
@@ -317,7 +326,7 @@ function Https(request: PublishArgs) {
             console.log("response nonce ", response.headers.get('nonc'))
             response.text().then(data => {
                 let str: string = data
-                console.log('data received ' + str)
+                console.log('data received ' + str.slice(0, 20))
                 let n = response.headers.get('nonc')
                 if ( n?.startsWith('[')) {
                     n = n.substring(1)

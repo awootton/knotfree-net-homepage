@@ -16,7 +16,7 @@ import * as app from  './App'
 
 import * as saved from './SavedStuff'
 import * as helpers from './Utils-tsx'
-import * as utils from './Utils'
+import * as utils from './utils'
 import * as mqtt from './MqttClient'
 import * as registry from './ChangeRegistry'
 import * as types from './Types'

@@ -7,7 +7,7 @@
 
 import * as mqtt from 'precompiled-mqtt';
 
-import * as utils from './Utils'
+import * as utils from './utils'
 
 import * as saved from './SavedStuff'
 import * as registry from './ChangeRegistry'
