@@ -96,9 +96,9 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
         var message: string = reply.message.toString()
         message = message.trim()
 
-        const newConfig : saved.ThingConfig = { 
-            ...config, 
-            thingPublicKey: message 
+        const newConfig: saved.ThingConfig = {
+            ...config,
+            thingPublicKey: message
         }
         configMgr.publish(index, newConfig)
     }
@@ -182,8 +182,8 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
             // console.log("dev card sending ", state.pendingCommandNonc)
             console.log("dev card sending ", config.commandString)
 
-            let ourArgs : string[] = [
-               ... args
+            let ourArgs: string[] = [
+                ...args
             ]
             if (config.cmdArgCount === 0) {
                 ourArgs = []
@@ -204,7 +204,7 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
             pipeline.Publish(request)
         }
 
-        configMgr.subscribe(index,state.uniqueid, (newConfig: saved.ThingConfig) => {
+        configMgr.subscribe(index, state.uniqueid, (newConfig: saved.ThingConfig) => {
             console.log("thing card got new config", newConfig)
             setConfig(newConfig)
         })
@@ -212,7 +212,7 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
         return function cleanup() {
             helpCache.remove(config.longName, state.uniqueid);
             adminhintCache.remove(config.longName, state.uniqueid);
-            configMgr.unsubscribe(index,state.uniqueid)
+            configMgr.unsubscribe(index, state.uniqueid)
         };
     })
 
@@ -280,7 +280,7 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
         }
         let c = allMgr.GetGlobalConfig()
         c.things.splice(index + 1, 0, newConfig);
-        allMgr.publish(c,true)
+        allMgr.publish(c, true)
     };
 
     const handleMenuNew = (event: any) => {
@@ -292,7 +292,7 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
         }
         let c = allMgr.GetGlobalConfig()
         c.things.splice(index + 1, 0, newConfig);
-        allMgr.publish(c,true)
+        allMgr.publish(c, true)
     };
 
 
@@ -302,7 +302,7 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
 
         let c = allMgr.GetGlobalConfig()
         c.things.splice(index, 1)
-        allMgr.publish(c,true)
+        allMgr.publish(c, true)
 
     };
 
@@ -322,7 +322,7 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
             let me = c.things.splice(index, 1);
             c.things.splice(index - 1, 0, me[0]);
         }
-        allMgr.publish(c,true)
+        allMgr.publish(c, true)
     };
 
     const handleMenuDown = (event: any) => {
@@ -333,7 +333,7 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
             let me = c.things.splice(index, 1);
             c.things.splice(index + 1, 0, me[0]);
         }
-        allMgr.publish(c,true)
+        allMgr.publish(c, true)
     };
 
 
@@ -363,7 +363,7 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
             cmdDescription: h.description,
             stars: h.stars,
         }
-        configMgr.publish(index , newConfig)
+        configMgr.publish(index, newConfig)
 
         // also issue the command
         if (h.argCount == 0) {
@@ -446,7 +446,18 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
     return (
         <Card variant="outlined" className='devCard'>
             <div className='cardRow1' >
-                <span className='commandInputSpan'>
+
+
+                <span className='commandSpan'>
+                    <div className='overlay' >
+                        Thing name:
+                    </div>
+                    <div className='commandDiv' >
+                        {config.longName}
+                    </div>
+                </span>
+
+                {/* <span className='commandInputSpan'>
                     <TextField
                         onChange={textClicked}
                         onBlur={changeThingName}
@@ -457,7 +468,10 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
                         fullWidth
                     // disabled={disabled}
                     />
-                </span>
+                </span> */}
+
+
+
                 {/* <span className='moreDevInfoWrapper'>
                     <div className='moreDevInfoSpan'>
                         {getThingInfo()}

@@ -1,5 +1,5 @@
 
-// deprecate this
+// deprecate this? 
 
 let myMap = new Map<string, (name: string, arg: any) => void>();
 

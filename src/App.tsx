@@ -1,6 +1,6 @@
 import { Buffer } from 'buffer'
 
-import React, { FC, ReactElement } from 'react';
+import React, { FC, ReactElement, useEffect } from 'react';
 import './App.css';
 
 import Tabs from '@mui/material/Tabs';
@@ -24,10 +24,9 @@ import * as mqtt from "./MqttClient"
 import * as more from "./MoreStuff"
 import * as utils from './utils'
 
-import Link from '@mui/material/Link';
-
 import Toolbar from '@mui/material/Toolbar';
-
+import * as registry from './ChangeRegistry'
+import {MarkdownDialog} from "./dialogs/MarkdownDialog"
 
 (window as any).global = window;
 // @ts-ignore
@@ -39,9 +38,10 @@ export let prefix = "https://"
 export let isDev = false
 export let forceLocalMode = false
 
+
 console.log("window.location.port", window.location.port)
 
-if ( window.location.port === "3000" ) {
+if (window.location.port === "3000") {
   serverName = "knotfree.com:8085"
   isDev = true
   prefix = "http://"
@@ -50,18 +50,22 @@ if ( window.location.port === "3000" ) {
   serverName = "knotfree.net"
   prefix = "https://"
 
-// serverName = "knotfree.io"
-// prefix = "http://"
-//forceLocalMode = true
+  // serverName = "knotfree.io"
+  // prefix = "http://"
+  //forceLocalMode = true
 
 }
-
-
 serverName = serverName + '/'
 // "knotfree.net" or localhost:3000/  knotfree.com is the same as localhost in my /etc/hosts file
 
 export var useMqtt = false
 export var useHttp = true // else if not mqtt use http
+
+export let helpPrefix = prefix+serverName+"api1/rawgithubusercontentproxy/awootton/knotfree-help-content/main/"
+if (isDev) {
+  helpPrefix = "http://localhost:4321/"
+}
+
 
 console.log("Top of App Top of App Top of App Top of App Top of App Top of App v0.1.5 serverName:", prefix, serverName)
 
@@ -137,21 +141,30 @@ export function VerticalTabs() {
 
   var starting = saved.getTabState()
 
-  // do we need this?
-  if (window.location.pathname === '/token') {
-    starting = 1
-  }
-  // if (window.location.pathname === '/setup') {
-  //   starting = 2
+  // do we need this. no, it's evil ?
+  // note the numbers though.
+  // if (window.location.pathname === '/token') {
+  //   starting = 1
   // }
-  if (window.location.pathname === '/Things') {
-    starting = 3
-  }
-  if (window.location.pathname === '/more') {
-    starting = 4
-  }
+  // // if (window.location.pathname === '/setup') {
+  // //   starting = 2
+  // // }
+  // if (window.location.pathname === '/Things') {
+  //   starting = 3
+  // }
+  // if (window.location.pathname === '/more') {
+  //   starting = 4
+  // }
 
   const [value, setValue] = React.useState(starting);
+
+  useEffect(() => {
+    registry.SetSubscripton("VerticalTabs", (name: string, arg: any) => {
+      const newOrdinal = +arg
+      setValue(newOrdinal)
+    })
+  }
+  )
 
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
     // since we left out #2 we have to pick a value that is not 2
@@ -164,7 +177,7 @@ export function VerticalTabs() {
 
   const tabs = (): ReactElement => {
     let ordinalValue = value
-    if (ordinalValue >=2 ) {
+    if (ordinalValue >= 2) {
       ordinalValue -= 1 // use mapping table TODO
     }
     return (
@@ -249,105 +262,135 @@ export function VerticalTabs() {
     setMobileOpen(!mobileOpen);
   };
 
-  function getHelpUrl(): string {
+  function getHelpUrl(): [string,string] {
 
-    var text = "none"
+	// eg http://localhost:8085/api1/rawgithubusercontentproxy/awootton/knotfree-net-homepage/main/README.md
+
+    var path = ""
+    var title = ""
     if (value === 0) { // about knotfree
-      text = "https://github.com/awootton/knotfreeiot/wiki"
+      path = "homepage.md"
+      title = "Homepage help"
     }
     if (value === 1) { // Access Token
-      text = "https://github.com/awootton/knotfreeiot/wiki/The-Access-Token-UI"
+      path = "tokens.md "
+      title = "Access Token help"
     }
     // if (value === 2) { // About mqtt5nano
     //   text = "https://github.com/awootton/mqtt5nano"
     // }
     if (value === 3) { // Things
-      text = "https://github.com/awootton/knotfree-net-homepage/wiki/Things"
+      path = "things.md"
+      title = "Things console help"
     }
     if (value === 4) { // misc
-      text = "https://github.com/awootton/knotfree-net-homepage/wiki/Things"
+      path = "misc.md"
+      title = "Miscellaneous explanations"
     }
-    return text
+    return [title,path]
+  }
+
+  const [isHelp, setIsHelp] = React.useState(false)
+
+  function helpClicked() {
+
+    registry.PublishChange("MarkdownDialogChangeNotification","reload")// reload the markdown every damn time
+    setIsHelp(true)  
   }
 
   const container = window !== undefined ? () => window.document.body : undefined;
 
+  const [helpTitle, helpPath] = getHelpUrl()
+
   return (
-    <div className = 'surroundingDiv'>
-    <Box className='surroundingBox' sx={{ display: 'flex' }}>
+    <div className='surroundingDiv'>
+      <Box className='surroundingBox' sx={{ display: 'flex' }}>
 
-      {/* <CssBaseline /> */}
-      <AppBar
-        position="fixed"
-        sx={{
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-          ml: { sm: `${drawerWidth}px` },
-        }}
-      >
-        <Toolbar className="topBarContainer">
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            edge="start"
-            onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { sm: 'none' } }}
+        {/* <CssBaseline /> */}
+        <AppBar
+          position="fixed"
+          sx={{
+            width: { sm: `calc(100% - ${drawerWidth}px)` },
+            ml: { sm: `${drawerWidth}px` },
+          }}
+        >
+          <Toolbar className="topBarContainer">
+            <IconButton
+              color="inherit"
+              aria-label="open drawer"
+              edge="start"
+              onClick={handleDrawerToggle}
+              sx={{ mr: 2, display: { sm: 'none' } }}
+            >
+              <MenuIcon />
+            </IconButton>
+
+            <MyToolbarText />
+
+            <span className='help'><button className='help' onClick={helpClicked}>Help</button></span>
+
+            <NetStatus />
+          </Toolbar>
+        </AppBar>
+        <Box
+          component="nav"
+          sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
+          aria-label="mailbox folders"
+        >
+          <Drawer
+            container={container}
+            variant="temporary"
+            open={mobileOpen}
+            onClose={handleDrawerToggle}
+            ModalProps={{
+              keepMounted: true, // Better open performance on mobile.
+            }}
+            sx={{
+              display: { xs: 'block', sm: 'none' },
+              '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+            }}
           >
-            <MenuIcon />
-          </IconButton>
-
-          <MyToolbarText />
-
-          <span className='help'><Link href={getHelpUrl()}>Help</Link></span>
-
-          <NetStatus />
-        </Toolbar>
-      </AppBar>
-      <Box
-        component="nav"
-        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
-        aria-label="mailbox folders"
-      >
-        <Drawer
-          container={container}
-          variant="temporary"
-          open={mobileOpen}
-          onClose={handleDrawerToggle}
-          ModalProps={{
-            keepMounted: true, // Better open performance on mobile.
-          }}
+            {tabs()}
+          </Drawer>
+          <Drawer
+            variant="permanent"
+            sx={{
+              display: { xs: 'none', sm: 'block' },
+              '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+            }}
+            open
+          >
+            {tabs()}
+          </Drawer>
+        </Box>
+        <Box
+          component="main"
+          // sx={{ flexGrow: 1, p: 3, width: { sm: `calc(100% - ${drawerWidth}px)` } }}
           sx={{
-            display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+            flexGrow: 1,
+            p: 2,
+            // width: { sm: `calc(100% - ${drawerWidth}px)` }, move to css
           }}
         >
-          {tabs()}
-        </Drawer>
-        <Drawer
-          variant="permanent"
-          sx={{
-            display: { xs: 'none', sm: 'block' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
-          }}
-          open
-        >
-          {tabs()}
-        </Drawer>
+          <Toolbar className="topOfPanel" />
+          {panels}
+        </Box>
       </Box>
-      <Box
-        component="main"
-        // sx={{ flexGrow: 1, p: 3, width: { sm: `calc(100% - ${drawerWidth}px)` } }}
-        sx={{
-          flexGrow: 1,
-          p: 2,
-          // width: { sm: `calc(100% - ${drawerWidth}px)` }, move to css
-        }}
-      >
-        <Toolbar className="topOfPanel" />
-        {panels}
-      </Box>
-    </Box>
+
+      <MarkdownDialog
+                open={isHelp}
+                onClose={() => setIsHelp(false)}
+                urlprefix={helpPrefix}
+                path={helpPath}
+                title={helpTitle}
+            />
+
     </div>
   )
+
+  // http://localhost:8085/api1/rawgithubusercontentproxy/awootton/knotfree-net-homepage/main/README.md
+  // https://knotfree.net/api1/rawgithubusercontentproxy/awootton/knotfree-net-homepage/main/README.md
+  
 
 }
 

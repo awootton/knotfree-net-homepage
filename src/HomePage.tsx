@@ -1,12 +1,13 @@
 
 import React, { FC, ReactElement, useEffect } from 'react'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
 import './homepage.css'
 
 import logo from './KnotFreeKnot128cropped.png'
 
 import knotfree_home_md_url from './knotfree-home-md.txt'
+import * as allMgr from './store/allThingsConfigMgr'
+import * as saved from './SavedStuff'
+import * as registry from './ChangeRegistry'
 
 type Props = {
 }
@@ -26,21 +27,48 @@ export const HomePage: FC<Props> = (props: Props): ReactElement => {
     }
   })
 
+  function addAThing() {
+    const newThing = saved.TestThingConfig
+    const newConfig = allMgr.GetGlobalConfig()
+    newConfig.things.push(newThing)
+    allMgr.publish(newConfig,true)
+    registry.PublishChange("VerticalTabs",3)
+  }
+
+  const isEmpty = allMgr.GetGlobalConfig().things.length === 0
+
   return (
-    <span>
+    <div>
+      <div className='centered'>
       <img src={logo} className="App-logo" alt="logo" /> 
+      </div>
       {/* <ReactMarkdown children={theMarkdown}
         remarkPlugins={[remarkGfm]}
       /> */}
       <div className='selButtons'>
+      <br></br>
+      Knotfree is a tool for creating Internet Of Things applications.<br></br><br></br>
+      The main idea is to create a thing, which is a device that can be controlled by a user.<br></br><br></br>
+      The dashboard is a place to see and control your things. It is the 'Things' tab (press the ☰ in the upper left).<br></br>
+      <br></br>
+      {isEmpty &&
+        <div className="indented">
+          Since is seems you are new here we can help you get started:<br></br>
+          <button onClick={addAThing}>Click here to have a 'thing' set up for you.</button><br></br><br></br>
+         Use the menu button,☰ on the upper right and use Pick Command to select different commands and press the button to see what they do.<br></br>
+         It would be less boring if it was your own thing 😊. <br></br><br></br>
+        </div>
+      }
+    
+      If you are here to get a token for a thing that you are initializing, <button onClick={() => {registry.PublishChange("VerticalTabs",1)}
+         }>you can get one here.</button><br></br>
+      <br></br> 
 
-      Go to the things tab to set up and access your things.<br></br>
-      <br></br>
-      More coming soon.<br></br>
-      <br></br>
+      <a target="_blank" href="https://github.com/awootton/knotfreeiot/wiki" rel="nofollow noopener ugc" >Learn More.</a> <br></br><br></br> 
       
       </div>
-    </span>
+
+    </div>
   )
 }
 

@@ -10,13 +10,11 @@ import {
     Button,
     Box,
     IconButton,
-    Typography,
 } from '@mui/material';
 
 import CircularProgress from '@mui/material/CircularProgress';
 import MenuItem from '@mui/material/MenuItem';
 import Menu from '@mui/material/Menu';
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 
 import { Close } from '@mui/icons-material/';
 
@@ -60,7 +58,7 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
     // nobody calls setConfig but the cb in useEffect. RULz
     const [config, setConfig] = React.useState(props.config)
 
-    const [startedPubkFetch, setStartedPubkFetch] = React.useState(false)
+    // const [startedPubkFetch, setStartedPubkFetch] = React.useState(false)
 
     // this for the left side command select
     const [selectUp, setSelectUp] = React.useState(null);
@@ -173,13 +171,17 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
 
     useEffect(() => {
 
+        let longNameIsGood = true
+        // if we can't get the admin hint we can't get anything else
+        if (config.longName === '' || adminhint === '') {
+            longNameIsGood = false
+        }
 
-        if (startedPubkFetch == false && config.longName !== '' &&
+        if (longNameIsGood &&
             (config.thingPublicKey === '' || config.thingPublicKey.toLowerCase().includes('error'))) {
-            setStartedPubkFetch(true)
             fetchPubk()
         }
-        if (config.longName !== '' &&
+        if ( longNameIsGood &&
             (config.shortName === '' || config.shortName.toLowerCase().includes('error'))) {
             fetchShortName()
         }
@@ -209,6 +211,12 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
         if (adminhint === '' && config.longName !== '') {
             adminhintCache.getAdminhint(config.longName, state.uniqueid, (h: string) => {
                 // it would be nice to tell all the other things to update their adminhint
+                
+                if (h === '') {
+                    // try again in 5 seconds until we get one 
+                    setTimeout(() => { setAdminhint(h) }, 5000)
+                    return
+                }
                 setAdminhint(h);
             })
         }
@@ -283,13 +291,10 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
 
         console.log("handleSetAdminPassClick pub", pub)
 
-        const newConfig = { ...config, adminPublicKey: pub, adminPrivateKey: priv }
-
         const allConfig = allMgr.GetGlobalConfig()
 
         // search all the things for a matching long name
         // update them all 
-
         for (let j = 0; j < allConfig.things.length; j++) {
             if (allConfig.things[j].longName === config.longName) {
                 const newConfig = {

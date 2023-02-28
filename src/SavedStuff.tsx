@@ -31,6 +31,18 @@ export const EmptyThingConfig: ThingConfig = {
     stars: 0
 }
 
+export const TestThingConfig: ThingConfig = {
+    adminPublicKey: "oXbblDIxBsJSt2tYSt20bNLsqs9vIcvZ-WPfZ2uHGgg",
+    adminPrivateKey: "qhZfxAgr5TypCJ-eQ94pf_LoSskBvVAnYfAKx10ppOA",
+    thingPublicKey: "bht-Ka3j7GKuMFOablMlQnABnBvBeugvSf4CdFV3LXs",
+    longName: "get-unix-time",
+    shortName: "time",
+    commandString: "get random",
+    cmdArgCount: 0,
+    cmdDescription: "returns a random integer",
+    stars: 0
+}
+
 export const TestThingsConfig: ThingsConfig = {
     things: []
 }
@@ -44,7 +56,7 @@ export const TestThingsConfig: ThingsConfig = {
 
 export type ThingsConfig = {
 
-   // globalConfig: GlobalConfig
+    // globalConfig: GlobalConfig
 
     things: ThingConfig[]
 }

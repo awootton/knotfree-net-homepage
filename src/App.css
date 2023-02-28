@@ -79,6 +79,11 @@ span.help {
     flex-grow: 1;
 }
 
+button.help {
+    background-color: black;
+    color: lightblue;
+}
+
 span.NetStatus {
     font-size: calc(10px);
     background-color: black;
