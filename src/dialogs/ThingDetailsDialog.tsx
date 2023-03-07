@@ -28,6 +28,9 @@ import * as utils from '../utils';
 import * as types from '../Types';
 import * as helpCache from '../store/helpCache'
 import * as adminhintCache from '../store/adminhintCache'
+import * as shortnameCache from '../store/shortnameCache'
+import * as pubkCache from '../store/pubkCache'
+
 
 import * as configMgr from '../store/thingConfigMgr'
 import * as allMgr from '../store/allThingsConfigMgr'
@@ -58,9 +61,7 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
     // nobody calls setConfig but the cb in useEffect. RULz
     const [config, setConfig] = React.useState(props.config)
 
-    // const [startedPubkFetch, setStartedPubkFetch] = React.useState(false)
-
-    // this for the left side command select
+    // this for the menu popup command select
     const [selectUp, setSelectUp] = React.useState(null);
 
     let rparts: string[] = []
@@ -80,59 +81,7 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
     let emptyArgs: string[] = []
     const [args, setArgs] = React.useState(emptyArgs);
 
-
-    function fetchPubk() {
-
-        const receivePubk = (reply: types.PublishReply) => {
-            var message: string = reply.message.toString()
-            message = message.trim()
-            const newConfig = {
-                ...config,
-                thingPublicKey: message
-            }
-            configMgr.publish(props.index,newConfig)
-        }
-
-        if (config.longName === '') {
-            return
-        }
-
-        let request: types.PublishArgs = {
-            ...types.EmptyPublishArgs,
-            ...config,
-            cb: receivePubk,
-            serverName: app.serverName,
-            commandString: 'get pubk'
-        }
-        pipeline.Publish(request)
-    }
-
-    function fetchShortName() {
-
-        const receiveShortName = (reply: types.PublishReply) => {
-
-            var message: string = reply.message.toString()
-            message = message.trim()
-            configMgr.publish(props.index,
-                {
-                    ...config,
-                    shortName: message
-                })
-        }
-
-        if (config.longName === '') {
-            return
-        }
-
-        let request: types.PublishArgs = {
-            ...types.EmptyPublishArgs,
-            ...config,
-            cb: receiveShortName,
-            serverName: app.serverName,
-            commandString: 'get short name'
-        }
-        pipeline.Publish(request)
-    }
+    const index = props.index
 
     const gotReturnValue = (reply: types.PublishReply) => {
 
@@ -141,7 +90,6 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
         var message: string = reply.message
 
         //console.log("ThingCard got message", message)
-        // registry.RemoveSubscripton(name)
         const newState: State = {
             ...state,
             returnValue: message,
@@ -149,25 +97,6 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
         }
         setState(newState)
     }
-
-    // const gotHelpValue = (reply: types.PublishReply) => {
-
-    //     // let options: types.LooseObject = arg
-
-    //     var message: string = reply.message
-    //     message = message.trim()
-
-    //     console.log("ThingCard got gotHelpValue", message)
-    //     // registry.RemoveSubscripton(name)
-    //     const newState: State = {
-    //         ...state,
-    //         pendingHelpNonc: ''
-    //     }
-    //     setState(newState)
-    //     let rparts = message.split('\n')
-    //     setCommands(rparts);
-    // }
-
 
     useEffect(() => {
 
@@ -177,16 +106,57 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
             longNameIsGood = false
         }
 
-        if (longNameIsGood &&
-            (config.thingPublicKey === '' || config.thingPublicKey.toLowerCase().includes('error'))) {
-            fetchPubk()
+        if ((config.thingPublicKey === '')
+            && longNameIsGood) {
+            console.log('ordering pubk ', index, config.longName)
+            pubkCache.subscribe(config.longName, state.uniqueid, (str: string) => {
+
+                if (str === '' || str.toLowerCase().includes('error')) {
+                    // try again in 5 seconds until we get one 
+                    const newConfig = {
+                        ...config,
+                        thingPublicKey: '',
+                    }
+                    setTimeout(() => { setConfig(newConfig) }, 5000)
+                    return
+                }
+                const newConfig = {
+                    ...config,
+                    thingPublicKey: str,
+                }
+                setConfig(newConfig)
+            })
         }
-        if ( longNameIsGood &&
-            (config.shortName === '' || config.shortName.toLowerCase().includes('error'))) {
-            fetchShortName()
+
+        if ((config.shortName === '')
+            && longNameIsGood) {
+
+            console.log('ordering short name ', index, config.longName)
+
+            shortnameCache.subscribe(config.longName, state.uniqueid, (str: string) => {
+
+                if (str === '' || str.includes('error')) {
+                    // try again in 5 seconds until we get one 
+                    const newConfig = {
+                        ...config,
+                        shortName: '',
+                    }
+                    setTimeout(() => { setConfig(newConfig) }, 5000)
+                    return
+                }
+                // if (str.length <= 0) {
+                //     str = '-pending'
+                // }
+                const newConfig = {
+                    ...config,
+                    shortName: str
+                }
+                setConfig(newConfig)
+            })
         }
+
         if (state.pendingCommandNonc !== '' && config.longName !== '') {
-           
+
             console.log("thing details card sending ", config.commandString)
 
             let request: types.PublishArgs = {
@@ -201,7 +171,7 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
         }
 
         if (help === '' && config.longName !== '') {
-            helpCache.getHelp(config.longName, state.uniqueid, (h: string) => {
+            helpCache.subscribe(config.longName, state.uniqueid, (h: string) => {
                 let rparts = h.split('\n')
                 setCommands(rparts);
                 setHelp(h);
@@ -209,9 +179,9 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
         }
 
         if (adminhint === '' && config.longName !== '') {
-            adminhintCache.getAdminhint(config.longName, state.uniqueid, (h: string) => {
+            adminhintCache.subscribe(config.longName, state.uniqueid, (h: string) => {
                 // it would be nice to tell all the other things to update their adminhint
-                
+
                 if (h === '') {
                     // try again in 5 seconds until we get one 
                     setTimeout(() => { setAdminhint(h) }, 5000)
@@ -226,34 +196,47 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
         })
 
         return function cleanup() {
-            helpCache.remove(config.longName, state.uniqueid);
-            adminhintCache.remove(config.longName, state.uniqueid);
+            helpCache.unsubscribe(config.longName, state.uniqueid);
+            adminhintCache.unsubscribe(config.longName, state.uniqueid);
             configMgr.unsubscribe(props.index, state.uniqueid)
+            shortnameCache.unsubscribe(config.longName, state.uniqueid)
+            pubkCache.unsubscribe(config.longName, state.uniqueid)
         };
     })
 
 
-    function adminPass(): ReactElement {
+    // function adminPass(): ReactElement {
 
-        return (
-            <>
-                <TextField
-                    onChange={changeAdminPass}
-                    // id="outlined-helperText"
-                    label={"Admin password"}
-                    defaultValue={config.adminPublicKey.length > 0 ? "********" : ""}
-                    helperText=""
-                    fullWidth
-                />
-            </>
-        )
+    //     return (
+    //         <>
+    //             <TextField
+    //                 onChange={changeAdminPass}
+    //                 // id="outlined-helperText"
+    //                 label={"Admin password"}
+    //                 defaultValue={config.adminPublicKey.length > 0 ? "********" : ""}
+    //                 helperText=""
+    //                 fullWidth
+    //             />
+    //         </>
+    //     )
+    // }
+
+    const [editThingName, setEditThingName] = React.useState(false)
+
+    function focusThingName() {
+        console.log('focusThingName2')
+        setEditThingName(true)
     }
 
-    function changeLongName(e: React.ChangeEvent<HTMLInputElement>) {
+    function thingNameChanged(e: React.ChangeEvent<HTMLInputElement>) {
+        let str = e.currentTarget.value
+        str = str.toLowerCase()
+        str = str.replace(/[^a-z0-9\-]/g, '')
+        e.currentTarget.value = str
     }
 
     // changeThingName changes the longName and when that happens everything else changes. setLongName
-    function changeThingName(e: any) { // on the blur/unfocus
+    function blurThingName(e: any) { // on the blur/unfocus
         const str: string = e.target.value
         console.log("new Thing name", str)
         let newName: string = str
@@ -268,45 +251,171 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
         setHelp('')
         setCommands([])
     }
+    function returnThingName(): JSX.Element {
+
+        console.log('returnThingName editThingName', editThingName)
+
+        if (editThingName) {
+            return (
+                <span className='commandInputSpan'>
+                    <TextField
+                        onChange={thingNameChanged}
+                        onBlur={blurThingName}
+                        // id="outlined-helperText"
+                        label={"Thing name:"}
+                        defaultValue={config.longName}
+                        helperText=""
+                        fullWidth
+                    // disabled={disabled}
+                    />
+                </span>
+            )
+
+        } else {
+            return (
+
+                <span className='commandSpan'>
+                    <div className='overlay2' >
+                        Thing name:
+                    </div>
+                    <div onClick={focusThingName} className='commandDiv' >
+                        {config.longName.length > 0 ? config.longName : 'Step 1: Enter long name'}
+                    </div>
+                </span>
+            )
+        }
+    }
+
 
 
     function confirmMe() {
         props.onConfirm()// config)
     }
 
-    let localAdminPass = ''
+    const [editAdminKey, setEditAdminKey] = React.useState(false)
 
-    function changeAdminPass(e: React.ChangeEvent<HTMLInputElement>) {
-        const str = e.currentTarget.value
-        console.log("changeAdminPass ", str)
-        localAdminPass = str
+    function focusAdminKey() {
+        console.log('focusAdminKey')
+        setEditAdminKey(true)
     }
 
-
-    function handleSetAdminPassClick() {
-
-        // calc the admin public and private keys
-
-        const [pub, priv] = utils.getBase64FromPassphrase(localAdminPass)
-
-        console.log("handleSetAdminPassClick pub", pub)
-
-        const allConfig = allMgr.GetGlobalConfig()
-
-        // search all the things for a matching long name
-        // update them all 
-        for (let j = 0; j < allConfig.things.length; j++) {
-            if (allConfig.things[j].longName === config.longName) {
-                const newConfig = {
-                    ...allConfig.things[j],
-                    adminPublicKey: pub, 
-                    adminPrivateKey: priv
+    function adminKeyChanged(e: React.ChangeEvent<HTMLInputElement>) {
+        let str = e.currentTarget.value
+        console.log("adminKeyChanged", str)
+        if (adminhint.length > 0) {
+            // calc pub and priv key
+            const [pub, priv] = utils.getBase64FromPassphrase(str)
+            
+            // search for matches in OUR config
+            const hints = adminhint.split(' ')
+            for (let i = 0; i < hints.length; i++) {
+                const hint = hints[i]
+                if (hint == pub.substring(0, 8)) {
+                    // match
+                    console.log("match")
+                    const newConfig: saved.ThingConfig = {
+                        ...config,
+                        adminPrivateKey: priv,
+                        adminPublicKey: pub,
+                    }
+                    configMgr.publish(index, newConfig)
+                    setEditAdminKey(false)
                 }
-
-                configMgr.publish(props.index, newConfig)
             }
+        } else {
+            // what?
         }
     }
+
+    function blurAdminKey(e: any) {
+        console.log('blurAdminKey')
+        setEditAdminKey(false)
+    }
+
+    function returnAdmin(): JSX.Element {
+
+        var needsEditAdminKey = false
+        if (config.adminPublicKey.length < 43) {
+            needsEditAdminKey = true
+        }
+        if (config.longName === '') {
+            needsEditAdminKey = true
+        }
+
+        if (needsEditAdminKey) {
+            return (
+                <span className='commandInputSpan'>
+                    <TextField
+                        onChange={adminKeyChanged}
+                        onBlur={blurAdminKey}
+                        // id="outlined-helperText"
+                        label={"Step 2. Admin password:"}
+                        defaultValue={""}
+                        helperText=""
+                        fullWidth
+                    // disabled={disabled}
+                    />
+                </span>
+            )
+
+        } else {
+            return (
+
+
+                <span className='commandSpan'>
+                    <div className='overlay' >
+                        Admin password:
+                    </div>
+                    <div onClick={focusThingName} className='commandDiv' >
+                        {!needsEditAdminKey ? '********' : 'Step 2: Enter admin password'}
+                    </div>
+
+                    {/* <span className='commandSpan'>
+                    <div className='overlay' >
+                        Admin password:
+                    </div>
+                    <div onClick={focusThingName} className='commandDiv' >
+                        {config.longName.length > 0 ? config.longName : 'Step 1: Enter long name'}
+                    </div */}
+                </span>
+            )
+        }
+    }
+
+
+    // let localAdminPass = ''
+
+    // function changeAdminPass(e: React.ChangeEvent<HTMLInputElement>) {
+    //     const str = e.currentTarget.value
+    //     console.log("changeAdminPass ", str)
+    //     localAdminPass = str
+    // }
+
+
+    // function handleSetAdminPassClick() {
+
+    //     // calc the admin public and private keys
+
+    //     const [pub, priv] = utils.getBase64FromPassphrase(localAdminPass)
+
+    //     console.log("handleSetAdminPassClick pub", pub)
+
+    //     const allConfig = allMgr.GetGlobalConfig()
+
+    //     // search all the things for a matching long name
+    //     // update them all 
+    //     for (let j = 0; j < allConfig.things.length; j++) {
+    //         if (allConfig.things[j].longName === config.longName) {
+    //             const newConfig = {
+    //                 ...allConfig.things[j],
+    //                 adminPublicKey: pub,
+    //                 adminPrivateKey: priv
+    //             }
+
+    //             configMgr.publish(props.index, newConfig)
+    //         }
+    //     }
+    // }
 
     const handleSelectClick = (event: any) => {
         console.log("handleSelectClick", event)
@@ -330,7 +439,7 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
 
         const newConfig = { ...config, commandString: h.theCommand, cmdArgCount: h.argCount, cmdDescription: h.description, stars: h.stars }
 
-        configMgr.publish(props.index,newConfig)
+        configMgr.publish(props.index, newConfig)
 
         // also issue the command
         setArgs([])
@@ -427,6 +536,8 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
         return args
     }
 
+    let offline = adminhint.length > 0 ? '' : 'offline'
+
     return (
         <Dialog open={props.open} maxWidth="sm" fullWidth
             onClose={props.onClose}
@@ -438,8 +549,13 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
                 </IconButton>
             </Box>
             <DialogContent>
+                <div className='offline' >{offline}</div>
 
                 <div className='detailsDiv'>
+                {returnThingName()}
+                </div>
+
+                {/* <div className='detailsDiv'>
                     <span>
                         <TextField
                             onChange={changeLongName}
@@ -452,13 +568,19 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
                         />
                     </span>
 
-                </div>
+                </div> */}
+
+<div className='spacingDiv'>&#160;</div>
+
                 <div className='detailsDiv'>
-                    {adminPass()}
+
+                    {returnAdmin() }
+                    {/* {adminPass()}
                     <span>
                         <input type="submit" value="set" onClick={handleSetAdminPassClick} />
-                    </span>
+                    </span> */}
                 </div>
+
                 {/* <TextField
                     onChange={changeLongName}
                     // id="outlined-helperText"
@@ -562,8 +684,8 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
                 {help.length > 0 ? 'he ' : ' '}
                 {adminhint.length > 0 ? 'ah ' : ' '}
                 {config.adminPublicKey.length > 0 ? ' ak' : ''}
-                {config.shortName.length > 0 ? ' sn' : ''}
                 {config.thingPublicKey.length > 0 ? ' pk' : ''}
+                {config.shortName.length > 0 ? ' sn' : ''}
             </div>
 
         </Dialog>

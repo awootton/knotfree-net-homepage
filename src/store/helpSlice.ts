@@ -3,6 +3,8 @@ import type { PayloadAction } from '@reduxjs/toolkit'
 import type { RootState } from './store'
 import * as types from './types'
 
+//  TODO: figure out how to use this and hook it up instead of fetching help in every component. Or else delete.
+
 const initialState: types.HelpState = {
     helps: [
         {

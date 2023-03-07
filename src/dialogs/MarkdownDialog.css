@@ -1,0 +1,22 @@
+ code {
+     background-color: lightgray
+ }
+ 
+ pre {
+     background-color: lightgray
+ }
+ 
+ p {
+     width: 100%;
+     overflow-wrap: normal;
+     margin-bottom: 12px;
+ }
+ 
+ li {
+     width: 100%;
+     overflow-wrap: normal
+ }
+ 
+ span {
+     align-items: left
+ }

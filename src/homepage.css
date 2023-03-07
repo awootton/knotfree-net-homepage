@@ -14,31 +14,9 @@
     width: 50%;
 }
 
-button {
+button.homepage {
     background-color: white;
     border: 0px solid black;
     font-size: medium;
     color: blue;
-}
-
-code {
-    background-color: lightgray
-}
-
-pre {
-    background-color: lightgray
-}
-
-p {
-    width: 100%;
-    overflow-wrap: normal
-}
-
-li {
-    width: 100%;
-    overflow-wrap: normal
-}
-
-span {
-    align-items: left
 }

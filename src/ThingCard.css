@@ -10,6 +10,14 @@
     margin-bottom: 8px;
 }
 
+.offline {
+    color: red;
+    font-size: 0.5rem;
+    position: absolute;
+    top: 0;
+    right: 32px;
+}
+
 .spacingDiv {
     margin: 8px;
 }

@@ -2,7 +2,6 @@
 import React, { FC, ReactElement, useEffect } from 'react'
 import Box from '@mui/material/Box';
 import MenuIcon from '@mui/icons-material/Menu';
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 
 import Card from '@mui/material/Card';
 import TextField from '@mui/material/TextField';
@@ -24,7 +23,9 @@ import * as app from './App'
 
 import * as detailsDialog from './dialogs/ThingDetailsDialog'
 import * as helpCache from './store/helpCache'
+import * as shortnameCache from './store/shortnameCache'
 import * as adminhintCache from './store/adminhintCache'
+import * as pubkCache from './store/pubkCache'
 import * as configMgr from './store/thingConfigMgr'
 import * as allMgr from './store/allThingsConfigMgr'
 
@@ -65,14 +66,12 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
 
     // this is for the right menu
     const [menuUp, setMenuUp] = React.useState(null);
+
     // this for the left side command select
-    const [selectUp, setSelectUp] = React.useState(null);
+    const [pickCommand, setPickCommand] = React.useState(false);
 
     let rparts: string[] = []
     const [commands, setCommands] = React.useState(rparts);
-
-    // need about, pubk, and admin hints
-    // basura const [adminHint, setAdminHint] = React.useState('');
 
     let emptyArgs: string[] = []
     const [args, setArgs] = React.useState(emptyArgs);
@@ -91,31 +90,6 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
         setState(newState)
     }
 
-    const receivePubkInfo = (reply: types.PublishReply) => {
-
-        var message: string = reply.message.toString()
-        message = message.trim()
-
-        const newConfig: saved.ThingConfig = {
-            ...config,
-            thingPublicKey: message
-        }
-        configMgr.publish(index, newConfig)
-    }
-    const receiveShortName = (reply: types.PublishReply) => {
-
-        var message: string = reply.message.toString()
-        message = message.trim()
-
-        if (message === config.shortName) {
-            return
-        }
-        const newConfig: saved.ThingConfig = {
-            ...config,
-            shortName: message,
-        }
-        configMgr.publish(index, newConfig)
-    }
 
     useEffect(() => {
 
@@ -125,40 +99,54 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
             longNameIsGood = false
         }
 
-        // todo: this is a hack.
-        if ((config.thingPublicKey === '' || config.thingPublicKey.toLowerCase().includes('error'))
+        if ((config.thingPublicKey === '')
             && longNameIsGood) {
-            // order it up
-            console.log('ordering pubk ', index)
-            let request: types.PublishArgs = {
-                ...types.EmptyPublishArgs,
-                ...config,
-                cb: receivePubkInfo,
-                serverName: app.serverName,
-                commandString: 'get pubk',
-            }
-            pipeline.Publish(request)
+            console.log('ordering pubk ', index, config.longName)
+            pubkCache.subscribe(config.longName, state.uniqueid, (str: string) => {
+
+                if (str === '' || str.toLowerCase().includes('error')) {
+                    // try again in 5 seconds until we get one 
+                    const newConfig = {
+                        ...config,
+                        thingPublicKey: '',
+                    }
+                    setTimeout(() => { setConfig(newConfig) }, 5000)
+                    return
+                }
+                const newConfig = {
+                    ...config,
+                    thingPublicKey: str,
+                }
+                setConfig(newConfig)
+            })
         }
 
-        // FIXME: this is a hack. 
-        if ((config.shortName === '' || config.shortName.includes('error'))
+        if ((config.shortName === '')
             && longNameIsGood) {
 
-            console.log('ordering short name ', index)
+            console.log('ordering short name ', index, config.longName)
 
-            let request: types.PublishArgs = {
-                ...types.EmptyPublishArgs,
-                ...config,
-                cb: receiveShortName,
-                serverName: app.serverName,
-                commandString: 'get short name'
-            }
+            shortnameCache.subscribe(config.longName, state.uniqueid, (str: string) => {
 
-            pipeline.Publish(request)
+                if (str === '' || str.includes('error')) {
+                    // try again in 5 seconds until we get one 
+                    const newConfig = {
+                        ...config,
+                        shortName: '',
+                    }
+                    setTimeout(() => { setConfig(newConfig) }, 5000)
+                    return
+                }
+                const newConfig = {
+                    ...config,
+                    shortName: str
+                }
+                setConfig(newConfig)
+            })
         }
 
         if (help === '' && longNameIsGood) {
-            helpCache.getHelp(config.longName, state.uniqueid, (h: string) => {
+            helpCache.subscribe(config.longName, state.uniqueid, (h: string) => {
                 let rparts = h.split('\n')
                 setCommands(rparts);
                 setHelp(h);
@@ -167,7 +155,7 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
 
         if (adminhint === '' && config.longName !== '') {
 
-            adminhintCache.getAdminhint(config.longName, state.uniqueid, (h: string) => {
+            adminhintCache.subscribe(config.longName, state.uniqueid, (h: string) => {
 
                 if (h === '') {
                     // try again in 5 seconds until we get one 
@@ -178,9 +166,9 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
             })
         }
 
+        // this is for issuing a command. There must be a better way.
         if (state.pendingCommandNonc !== '' && config.longName !== '') {
-            // console.log("dev card sending ", state.pendingCommandNonc)
-            console.log("dev card sending ", config.commandString)
+            console.log("dev card sending ", config.commandString, args)
 
             let ourArgs: string[] = [
                 ...args
@@ -210,21 +198,17 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
         })
 
         return function cleanup() {
-            helpCache.remove(config.longName, state.uniqueid);
-            adminhintCache.remove(config.longName, state.uniqueid);
+            helpCache.unsubscribe(config.longName, state.uniqueid);
+            adminhintCache.unsubscribe(config.longName, state.uniqueid)
             configMgr.unsubscribe(index, state.uniqueid)
+            shortnameCache.unsubscribe(config.longName, state.uniqueid)
+            pubkCache.unsubscribe(config.longName, state.uniqueid)
         };
     })
 
-    function textClicked(e: React.ChangeEvent<HTMLInputElement>) {
-        let str = e.currentTarget.value
-        str = str.toLowerCase()
-        e.currentTarget.value = str
-    }
 
     function argTextChanged(e: React.ChangeEvent<HTMLInputElement>) {
         let str = e.currentTarget.value
-        str = str.toLowerCase()
         let id: number = parseInt(e.currentTarget.id)
         const arrlen: number = args.length > id ? args.length : id
 
@@ -237,22 +221,24 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
     }
 
     // changeThingName changes the longName and when that happens everything else changes. setLongName
-    function changeThingName(e: any) { // on the blur unfocus
-        const str: string = e.target.value
-        console.log("new Thing name", str)
-        let newName: string = str
-        const newConfig: saved.ThingConfig = {
-            ...saved.EmptyThingConfig,
-            longName: newName,
-        }
-        configMgr.publish(index, newConfig)
-        setHelp('')
-        setCommands([])
-    }
+    // function changeThingName(e: any) { // on the blur unfocus
+    //     const str: string = e.target.value
+    //     console.log("new Thing name", str)
+    //     let newName: string = str
+    //     const newConfig: saved.ThingConfig = {
+    //         ...saved.EmptyThingConfig,
+    //         longName: newName,
+    //     }
+    //     configMgr.publish(index, newConfig)
+    //     setHelp('')
+    //     setCommands([])
+    // }
 
     function doCommandAttempt() {
 
         if (config.commandString.length < 1) {
+            // popup the menu
+            setPickCommand(true)
             return
         }
 
@@ -295,7 +281,6 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
         allMgr.publish(c, true)
     };
 
-
     const handleMenuDelete = (event: any) => {
 
         setMenuUp(null);
@@ -311,7 +296,6 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
         setMenuUp(null)
         setIsDetails(true)
     };
-
 
     const handleMenuUp = (event: any) => {
 
@@ -341,9 +325,9 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
         setMenuUp(null);
     };
 
-    const handleSelectClick = (event: any) => {
-        console.log("handleSelectClick", event)
-        setSelectUp(event.currentTarget);
+    const handleHelpMenuPopup = (event: any) => {
+        console.log("handleHelpMenuPopup", event)
+        setPickCommand(true) // event.currentTarget);
     };
 
     const handleSelectMenu = (event: any) => {
@@ -385,11 +369,11 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
 
             setState(newState)
         }
-        setSelectUp(null);
+        setPickCommand(false);
     };
 
     const handleSelectClose = () => {
-        setSelectUp(null);
+        setPickCommand(false);
     };
 
     const theReturnValue = state.returnValue
@@ -443,65 +427,181 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
         trimmedDescription = trimmedDescription.substring(0, 18) + '...'
     }
 
-    return (
-        <Card variant="outlined" className='devCard'>
-            <div className='cardRow1' >
+    let offline = adminhint.length > 0 ? '' : 'offline'
 
+    const [editThingName, setEditThingName] = React.useState(false)
 
-                <span className='commandSpan'>
-                    <div className='overlay' >
-                        Thing name:
-                    </div>
-                    <div className='commandDiv' >
-                        {config.longName}
-                    </div>
-                </span>
+    function focusThingName() {
+        console.log('focusThingName')
+        setEditThingName(true)
+    }
 
-                {/* <span className='commandInputSpan'>
+    function blurThingName(e: any) {
+        console.log('focusThingName')
+        // setThingNameFocused(true)
+        const str: string = e.target.value
+        console.log("new Thing name", str)
+        let newName: string = str
+        const newConfig: saved.ThingConfig = {
+            ...saved.EmptyThingConfig,
+            longName: newName,
+        }
+        configMgr.publish(index, newConfig)
+        setHelp('')
+        setCommands([])
+
+    }
+
+    function thingNameChanged(e: React.ChangeEvent<HTMLInputElement>) {
+        let str = e.currentTarget.value
+        str = str.toLowerCase()
+        str = str.replace(/[^a-z0-9\-]/g, '')
+        e.currentTarget.value = str
+    }
+
+    function returnThingName(): JSX.Element {
+
+        if (editThingName) {
+            return (
+                <span className='commandInputSpan'>
                     <TextField
-                        onChange={textClicked}
-                        onBlur={changeThingName}
+                        onChange={thingNameChanged}
+                        onBlur={blurThingName}
                         // id="outlined-helperText"
-                        label={"Thing name"}
+                        label={"Thing name:"}
                         defaultValue={config.longName}
                         helperText=""
                         fullWidth
                     // disabled={disabled}
                     />
-                </span> */}
+                </span>
+            )
+
+        } else {
+            return (
+
+                <span className='commandSpan'>
+                    <div className='overlay' >
+                        Thing name:
+                    </div>
+                    <div onClick={focusThingName} className='commandDiv' >
+                        {config.longName.length > 0 ? config.longName : 'Step 1: Enter long name'}
+                    </div>
+                </span>
+            )
+        }
+    }
+
+    const [editAdminKey, setEditAdminKey] = React.useState(false)
+
+    function focusAdminKey() {
+        console.log('focusAdminKey')
+        setEditAdminKey(true)
+    }
 
 
+    function adminKeyChanged(e: React.ChangeEvent<HTMLInputElement>) {
+        let str = e.currentTarget.value
+        console.log("adminKeyChanged", str)
+        if ( adminhint.length > 0) {
+            // calc pub and priv key
+            const [pub, priv] = utils.getBase64FromPassphrase(str)
 
-                {/* <span className='moreDevInfoWrapper'>
-                    <div className='moreDevInfoSpan'>
-                        {getThingInfo()}
-                    </div> 
-                </span> */}
-                {/* {props.showPubkey ? (<span className='devKey'>{txtStandin('Thing key', 'iuFO975k...')}</span>) : null}
-                {props.showAdminKey ? (<span className='adminKey'>{txtStandin('Admin key', 'oGeJoMdC...')}</span>) : null} */}
+            // search for matches in OUR config
+            const hints = adminhint.split(' ')
+            for ( let i = 0; i < hints.length; i++) {
+                const hint = hints[i]
+                if (hint == pub.substring(0, 8)) {
+                    // match
+                    console.log("match")
+                    const newConfig: saved.ThingConfig = {
+                        ...config,
+                        adminPrivateKey: priv,
+                        adminPublicKey: pub,
+                    }
+                    configMgr.publish(index, newConfig)
+                    setEditAdminKey(false)
+                }
+            }
+        }  else {
+            // what?
+        }
+    }
+
+    function blurAdminKey(e: any) {
+        console.log('blurAdminKey')
+        setEditAdminKey(false)
+    }
+
+    function returnRow2(): JSX.Element {
+
+        var needsEditAdminKey = false
+        if (config.adminPublicKey.length < 43) {
+            needsEditAdminKey = true
+        }
+        if (config.longName === '') {
+            needsEditAdminKey = true
+        }
+
+        if (needsEditAdminKey) {
+            return (
+                <span className='commandInputSpan'>
+                    <TextField
+                        onChange={adminKeyChanged}
+                        onBlur={blurAdminKey}
+                        // id="outlined-helperText"
+                        label={"Step 2. Admin password:"}
+                        defaultValue={""}
+                        helperText=""
+                        fullWidth
+                    // disabled={disabled}
+                    />
+                </span>
+            )
+
+        } else {
+            return (
+                <>
+                    <span className='cmdSpan'>
+                        <div className='overlay' >
+                            Command:
+                        </div>
+                        <button type="button" onClick={doCommandAttempt} className='cmdButton' >
+                            {config.commandString.length > 0 ? config.commandString : 'Step 3: Pick a command'}
+                        </button>
+                        <div className='bottomoverlay' >
+                            {trimmedDescription}
+                        </div>
+
+                    </span>
+
+                    <span className='resultSpan'>
+                        <div className='overlay' >
+                            Result:
+                        </div>
+                        <div className='resultDiv' >
+                            {utilsTsx.LinesToParagraphs(theReturnValue)}
+                        </div>
+                    </span>
+                </>
+            )
+        }
+    }
+
+    return (
+        <Card variant="outlined" className='devCard'>
+
+            <div className='offline' >{offline}</div>
+
+            <div className='cardRow1' >
+
+                {returnThingName()}
+
             </div>
             <div className='cardRow2'>
-                {/* <span className='cmdpulldown'  ><ArrowDropDownIcon onClick={handleSelectClick} style={{ fontSize: "48px" }} /></span> */}
+                {/* <span className='cmdpulldown'  ><ArrowDropDownIcon onClick={handleHelpMenuPopup} style={{ fontSize: "48px" }} /></span> */}
 
-                <span className='cmdSpan'>
-                    <div className='overlay' >
-                        Command:
-                    </div>
-                    <button type="button" onClick={doCommandAttempt} className='cmdButton' >{config.commandString}</button>
-                    <div className='bottomoverlay' >
-                        {trimmedDescription}
-                    </div>
-
-                </span>
-
-                <span className='resultSpan'>
-                    <div className='overlay' >
-                        Result:
-                    </div>
-                    <div className='resultDiv' >
-                        {utilsTsx.LinesToParagraphs(theReturnValue)}
-                    </div>
-                </span>
+                {returnRow2()}
 
             </div>
 
@@ -516,9 +616,8 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
                 open={Boolean(menuUp)}
                 onClose={handleClose}
             >
-
+                <MenuItem onClick={handleHelpMenuPopup}>Pick Command</MenuItem>
                 <MenuItem onClick={handleMenuDetails}>Details</MenuItem>
-                <MenuItem onClick={handleSelectClick}>Pick Command</MenuItem>
                 <MenuItem onClick={handleMenuNew}>New</MenuItem>
                 <MenuItem onClick={handleMenuDuplicate}>Duplicate</MenuItem>
                 <MenuItem onClick={handleMenuDelete}>Delete</MenuItem>
@@ -529,9 +628,9 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
 
             <Menu
                 id="simple-menu"
-                anchorEl={selectUp}
+                // anchorEl={pickCommand}
                 keepMounted
-                open={Boolean(selectUp)}
+                open={pickCommand}
                 onClose={handleSelectClose}
             >
                 {menuitems}
@@ -551,9 +650,8 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
                 {help.length > 0 ? 'he ' : ' '}
                 {adminhint.length > 0 ? 'ah ' : ' '}
                 {config.adminPublicKey.length > 0 ? ' ak' : ''}
-                {config.shortName.length > 0 ? ' sn' : ''}
                 {config.thingPublicKey.length > 0 ? ' pk' : ''}
-                {" " + props.version}
+                {config.shortName.length > 0 ? ' sn' : ''}
             </div>
         </Card>
 

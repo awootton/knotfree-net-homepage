@@ -4,37 +4,37 @@ import * as pipeline from '../Pipeline'
 import * as app from '../App'
 
 
-type helpMapItem = {
-    help: string;
+type shortnameMapItem = {
+    shortname: string;
     // from uniqid to callback
     map: Map<string, (h: string) => any>;
 }
 
-let helpMap = new Map<string, helpMapItem>();
+let shortnameMap = new Map<string, shortnameMapItem>();
 
 export function subscribe(longName: string, uniqueid: string, cb: (h: string) => any) {
 
-    // console.log("lets do get help")
+    // console.log("lets do get shortname")
 
     const key = longName
 
-    let found = helpMap.get(key)
+    let found = shortnameMap.get(key)
     if (found === undefined) {
 
-        let found: helpMapItem = {
-            help: "",
+        let found: shortnameMapItem = {
+            shortname: "",
             map: new Map<string, () => any>(),
         }
         found.map.set(uniqueid, cb)
-        helpMap.set(key, found)
+        shortnameMap.set(key, found)
 
-        function gotHelpValue(reply: types.PublishReply) {
+        function gotShortnameValue(reply: types.PublishReply) {
 
             var message: string = reply.message
             if (message !== undefined && !message.toLowerCase().includes("error")) {
                 message = message.trim()
-                found.help = message
-                //console.log("helpCache got gotHelpValue", message)
+                found.shortname = message
+                //console.log("shortnameCache got gotShortnameValue", message)
                 for (let [key, cb] of found.map) {
                     cb(message)
                 }
@@ -44,18 +44,18 @@ export function subscribe(longName: string, uniqueid: string, cb: (h: string) =>
         let request: types.PublishArgs = {
             ...types.EmptyPublishArgs,
             longName: longName,
-            cb: gotHelpValue,
+            cb: gotShortnameValue,
             serverName: app.serverName,
-            commandString: 'help'
+            commandString: 'get short name'
         }
         pipeline.Publish(request)
 
     } else {
         if (found !== undefined) {
-            if (found.help.length >= 0) {
+            if (found.shortname.length >= 0) {
                 found.map.set(uniqueid, cb)
                 setTimeout(() => {
-                    cb(found ? found.help : "")
+                    cb(found ? found.shortname : "")
                 }, 1)
             }
         }
@@ -65,11 +65,11 @@ export function subscribe(longName: string, uniqueid: string, cb: (h: string) =>
 // remove is called when a component is unmounted.
 export function unsubscribe(longName: string, uniqueid: string) {
     const key = longName 
-    const found = helpMap.get(longName)
+    const found = shortnameMap.get(longName)
     if (found !== undefined) {
         found.map.delete(uniqueid)
         if (found.map.size === 0) {
-            helpMap.delete(key)
+            shortnameMap.delete(key)
         }
     }
 }

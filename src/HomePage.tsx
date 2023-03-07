@@ -48,19 +48,19 @@ export const HomePage: FC<Props> = (props: Props): ReactElement => {
       <div className='selButtons'>
       <br></br>
       Knotfree is a tool for creating Internet Of Things applications.<br></br><br></br>
-      The main idea is to create a thing, which is a device that can be controlled by a user.<br></br><br></br>
+      The main idea is to create a thing, which is a device that can be controlled by a user. Like a thermometer, doorbell, light or an electronic device of your creation.<br></br><br></br>
       The dashboard is a place to see and control your things. It is the 'Things' tab (press the ☰ in the upper left).<br></br>
       <br></br>
       {isEmpty &&
         <div className="indented">
-          Since is seems you are new here we can help you get started:<br></br>
-          <button onClick={addAThing}>Click here to have a 'thing' set up for you.</button><br></br><br></br>
+          Since it seems you are new here we can help you get started:<br></br>
+          <button className='homepage' onClick={addAThing}>Click here to have a 'thing' set up for you.</button><br></br><br></br>
          Use the menu button,☰ on the upper right and use Pick Command to select different commands and press the button to see what they do.<br></br>
          It would be less boring if it was your own thing 😊. <br></br><br></br>
         </div>
       }
     
-      If you are here to get a token for a thing that you are initializing, <button onClick={() => {registry.PublishChange("VerticalTabs",1)}
+      If you are here to get a token for a thing that you are initializing, <button className='homepage' onClick={() => {registry.PublishChange("VerticalTabs",1)}
          }>you can get one here.</button><br></br>
       <br></br> 
 

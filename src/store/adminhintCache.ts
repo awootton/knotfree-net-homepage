@@ -12,7 +12,7 @@ type adminhintMapItem = {
 
 let adminhintMap = new Map<string, adminhintMapItem>();
 
-export function getAdminhint(longName: string, uniqueid: string, cb: (h: string) => any) {
+export function subscribe(longName: string, uniqueid: string, cb: (h: string) => any) {
 
     // console.log("lets do get adminhint")
 
@@ -63,7 +63,7 @@ export function getAdminhint(longName: string, uniqueid: string, cb: (h: string)
 }
 
 // remove is called when a component is unmounted.
-export function remove(longName: string, uniqueid: string) {
+export function unsubscribe(longName: string, uniqueid: string) {
     const key = longName 
     const found = adminhintMap.get(longName)
     if (found !== undefined) {

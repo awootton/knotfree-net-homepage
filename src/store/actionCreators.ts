@@ -2,6 +2,10 @@
 
 import * as types from "./types"
  
+
+//  TODO: figure out how to use this and hook it up instead of fetching help in every component. Or else delete.
+
+
 export function addHelp(help: types.Help) {
   const action: types.HelpAction = {
     type: types.ADD_HELP,

@@ -199,7 +199,7 @@ function Encrypt(request: PublishArgs) {
         }
         console.log('encrypted nonce', request.nonce)
         console.log('encrypted theirPubk', request.thingPublicKey)
-        console.log('encrypted ourAdminPrivk', request.adminPrivateKey)
+        // verboten: console.log('encrypted ourAdminPrivk', request.adminPrivateKey)
 
         // let's form the path.
         path = '=' + utils.toBase64Url(enc)
