@@ -2,6 +2,11 @@
 import { Button } from '@mui/material'  // Card,Paper
 import React, { FC, ReactElement, useEffect } from 'react'
 
+import Checkbox from '@mui/material/Checkbox';
+import FormGroup from '@mui/material/FormGroup';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import * as pipeline from './Pipeline';
+
 // import './homepage.css'
 import './AccessTokenPage.css'
 
@@ -12,14 +17,17 @@ import { CopyToClipboard } from 'react-copy-to-clipboard'
 import Dialog from '@material-ui/core/Dialog';
 import TextField from '@mui/material/TextField';
 
-import * as app from  './App'
+import * as app from './App'
 
 import * as saved from './SavedStuff'
 import * as helpers from './Utils-tsx'
 import * as utils from './utils'
-import * as mqtt from './MqttClient'
+
 import * as registry from './ChangeRegistry'
 import * as types from './Types'
+
+import * as allMgr from './store/allThingsConfigMgr'
+import * as tokenCache from './store/tokenCache'
 
 
 type State = {
@@ -38,8 +46,48 @@ var defaultState: State = {
     isPasteOwnedToken: false
 }
 
+type ThingPayloadConfig = {
+    config: saved.ThingConfig
+    payload: types.KnotFreeTokenPayload
+}
 
 type Props = {
+}
+
+// returns a list of all the configs deduped and with the payload empty
+// we have no way to vet which is best but we can at least watch for empties.
+export function CollectThingList(): ThingPayloadConfig[] {
+    const all = allMgr.GetGlobalConfig()
+    let list: ThingPayloadConfig[] = []
+    for (let i = 0; i < all.things.length; i++) {
+        const thing = all.things[i]
+        let found: ThingPayloadConfig = { config: { ...thing }, payload: types.EmptyKnotFreeTokenPayload }
+        let didFind = false
+        for (let j = 0; j < list.length; j++) {
+            if (list[j].config.longName === thing.longName) {
+                found = {
+                    ...list[j]
+                }
+                didFind = true
+                break
+            }
+        }
+        if (didFind) {
+            if (found.config.adminPrivateKey === "") {
+                found.config.adminPrivateKey = thing.adminPrivateKey
+            }
+            if (found.config.adminPublicKey === "") {
+                found.config.adminPublicKey = thing.adminPublicKey
+            }
+            if (found.config.thingPublicKey === "") {
+                found.config.thingPublicKey = thing.thingPublicKey
+            }
+
+        } else {
+            list.push(found)
+        }
+    }
+    return list
 }
 
 export const AccessTokenPage: FC<Props> = (props: Props): ReactElement => {
@@ -60,6 +108,8 @@ export const AccessTokenPage: FC<Props> = (props: Props): ReactElement => {
 
     const [stats, setStats] = React.useState(types.EmptyKnotFreeTokenStats);
 
+    const [things, setThings] = React.useState(CollectThingList())
+
     const registryNameTokenStats = 'registryNameTokenStatesYCDmkjgCLM'
 
     const gotUsageStats = (name: string, arg: any) => {
@@ -79,6 +129,18 @@ export const AccessTokenPage: FC<Props> = (props: Props): ReactElement => {
 
     useEffect(() => {
         registry.SetSubscripton(registryNameTokenStats, gotUsageStats)
+
+        for (let i = 0; i < things.length; i++) {
+            const thing = things[i]
+            if (thing.payload.exp === 0) {
+                tokenCache.subscribe(thing.config.longName, 'admin_' + thing.config.longName, thing.config, (h: types.KnotFreeTokenPayload) => {
+                    console.log("got tokenCache.subscribe", h)
+                    const newThings = [...things]
+                    newThings[i].payload = h
+                    setThings(newThings)
+                })
+            }
+        }
     })
 
     function getTokenFromServer() {
@@ -192,6 +254,7 @@ export const AccessTokenPage: FC<Props> = (props: Props): ReactElement => {
     // style={{ width: 600, height: 800, padding: 24 }} // doesn't even work
     // why can't I style with css?
 
+    // this is not really useful. We want this for each thing.
     function getUsageClicked() {
 
         let [payload, error] = utils.GetPayloadFromToken(state.theToken)
@@ -199,8 +262,52 @@ export const AccessTokenPage: FC<Props> = (props: Props): ReactElement => {
             return
         }
         // console.log("sendng publish get stats to ", payload.jti)
-        mqtt.Publish('get stats', payload.jti, registryNameTokenStats)
+        //  mqtt.Publish('get stats', payload.jti, registryNameTokenStats)
+        let url = app.prefix + payload.jti + '.' + app.serverName + "get/stats"
+        console.log('getStat url', url)
+
+        fetch(url, { method: "GET" })
+            .then(response => response.text())
+            .then(data => {
+                console.log('token stats:' + data)
+
+                var str = '{"When":1667999501,"Stats":[' + data + ']}'
+                console.log('token stats:' + str)
+                var stats: types.KnotFreeTokenStats = JSON.parse(str) as types.KnotFreeTokenStats
+
+                setStats(stats) // types.KnotFreeTokenStats
+            })
+            .catch(error => console.error(error));
     }
+
+    let checkedArray: boolean[] = []
+
+    function getThingsElementList(): ReactElement[] {
+
+        // console.log("getThingList")
+        const list = things
+        const ret: ReactElement[] = []
+        for (let i = 0; i < list.length; i++) {
+            const thing = list[i]
+            const expDate = new Date(thing.payload.exp * 1000)
+            var label = thing.config.longName + " expires: " + expDate.getFullYear() + "-" + (expDate.getMonth()+1) + "-" + expDate.getDate()
+            if (thing.payload.exp <= 1) {
+                label = thing.config.longName + " expires: unknown"
+            }
+            ret.push(
+                <FormControlLabel
+                    key={i}
+                    label={label}
+                    control={<Checkbox checked={checkedArray[i]} onChange={() => {
+                        checkedArray[i] = !checkedArray[i]
+                    }} />}
+                />
+            )
+        }
+        return ret
+    }
+
+    const thingsElementList = getThingsElementList()
 
     const tokenText = utils.TokenToLimitsText(state.theToken)
     const tokenParagraphs = helpers.LinesToParagraphs(tokenText)
@@ -208,21 +315,46 @@ export const AccessTokenPage: FC<Props> = (props: Props): ReactElement => {
     const useageText = utils.KnotFreeTokenStatsToText(stats)
     const usageParagraphs = helpers.LinesToParagraphs(useageText)
 
+    function setTokens() {
+        for (let i = 0; i < thingsElementList.length; i++) {
+            const element = thingsElementList[i]
+            const checked = checkedArray[i]
+            //console.log("checkbox element", element, checked)
+            const index = i;
+            const thing = things[i]
+            if (checked) {
+                let request: types.PublishArgs = {
+                    ...types.EmptyPublishArgs,
+                    ...thing.config,
+                    longName: thing.config.longName,
+                    cb: () => console.log("set token callback"),
+                    serverName: app.serverName,
+                    commandString: 'set token',
+                    args: [state.theToken]
+                }
+                request.cmdDescription = "set the damn token"
+                console.log("updating token for ", thing.config.longName)
+                pipeline.Publish(request)
+            }
+        }
+    }
+
     function makeTokenPropertiesElement(): ReactElement {
         let [payload, error] = utils.GetPayloadFromToken(state.theToken)
         if (error.length > 0) {
             return (<></>)
         }
         return (<>
-            <div>
+            <div className='tokenDiv'>
                 <div className='overlay' >
-                    Token properties
+                    Properties of token above.
                 </div>
                 <div className='tokenCard'>
                     {tokenParagraphs}
                 </div>
             </div>
-            <Button variant="outlined" className='myButtons' onClick={getUsageClicked} >Get current usage numbers</Button>
+
+            {/* <Button variant="outlined" className='myButtons' onClick={getUsageClicked} >Get current usage numbers</Button>
             <div>
                 <div className='overlay' >
                     Current usage numbers.
@@ -230,13 +362,24 @@ export const AccessTokenPage: FC<Props> = (props: Props): ReactElement => {
                 <div className='tokenCard'>
                     {usageParagraphs}
                 </div>
-            </div>
+            </div> */}
         </>
         )
-
     }
 
+    function getSetTokenMessage(): ReactElement {
+        // console.log("getSetTokenMessage", state.theToken.length)
+        if (state.theToken.length > 0) {
+            return (<>
+                <Button variant="outlined" className='myButtons' onClick={setTokens} >Set token on all devices below:</Button>
 
+                <FormGroup>
+                    {thingsElementList}
+                </FormGroup>
+            </>)
+
+        } else { return (<></>) }
+    }
     return (
         <span>
             <Dialog
@@ -248,6 +391,7 @@ export const AccessTokenPage: FC<Props> = (props: Props): ReactElement => {
 
             {getTokMessage()}
             {makeTokenPropertiesElement()}
+            {getSetTokenMessage()}
 
         </span>
     )

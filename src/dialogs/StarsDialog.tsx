@@ -31,7 +31,7 @@ export const StarsDialog: FC<Props> = (props: Props): ReactElement => {
         onClose={props.onClose}
         >
             {/* <DialogTitle>{props.title}</DialogTitle> */}
-            Hello world starz
+            Hello world starz - Alan Wootton was here.
             <Canvas/>
         </Dialog>
     );

@@ -109,10 +109,10 @@ export const MoreStuff: FC<Props> = (props: Props): ReactElement => {
         str += 'input bytes/sec = ' + intrimmed + " of " + max.in + '\n'
         str += 'output bytes/sec = ' + outtrimmed + " of " + max.out + '\n'
         str += 'memory used = ' + stat.mem + '\n'
-        // str += 'guru = ' + stat.guru + '\n'
+        str += 'lsof count = ' + stat.con + '\n'
 
         return (
-            <div key={index}>
+            <div className = 'stat' key={index}>
                 <div className='overlay' >
                     Usage for {stat.name}
                 </div>
@@ -121,7 +121,6 @@ export const MoreStuff: FC<Props> = (props: Props): ReactElement => {
                 </div>
             </div>
         )
-
     }
 
     // marshal into stats and then write as array of divs with lines
@@ -209,7 +208,8 @@ export const MoreStuff: FC<Props> = (props: Props): ReactElement => {
             <div className='segment'>
                 <p>
                     Build Date: {preval`module.exports = new Date().toLocaleString();`}.
-                </p>
+               <br />
+                Shift click reload, <span className='reload' > ⟳ </span>, in the browser to get the latest version.</p>
             </div>
 
             <div className='segment'>

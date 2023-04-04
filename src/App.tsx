@@ -42,11 +42,12 @@ export let forceLocalMode = false
 console.log("window.location.port", window.location.port)
 
 if (window.location.port === "3000") {
+    // is local dev moce 
   serverName = "knotfree.com:8085"
   isDev = true
   prefix = "http://"
 
-  // for debug only:
+  // for debug against prod only:
   serverName = "knotfree.net"
   prefix = "https://"
 
@@ -65,7 +66,6 @@ export let helpPrefix = prefix+serverName+"api1/rawgithubusercontentproxy/awoott
 if (isDev) {
   helpPrefix = "http://localhost:4321/"
 }
-
 
 console.log("Top of App Top of App Top of App Top of App Top of App Top of App v0.1.5 serverName:", prefix, serverName)
 

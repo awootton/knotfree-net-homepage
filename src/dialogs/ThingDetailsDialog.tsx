@@ -27,13 +27,15 @@ import * as utilsTsx from '../Utils-tsx';
 import * as utils from '../utils';
 import * as types from '../Types';
 import * as helpCache from '../store/helpCache'
+import * as tokenCache from '../store/tokenCache'
 import * as adminhintCache from '../store/adminhintCache'
 import * as shortnameCache from '../store/shortnameCache'
 import * as pubkCache from '../store/pubkCache'
+import * as helpers from '../Utils-tsx'
 
 
 import * as configMgr from '../store/thingConfigMgr'
-import * as allMgr from '../store/allThingsConfigMgr'
+//import * as allMgr from '../store/allThingsConfigMgr'
 
 
 import '../ThingCard.css'
@@ -70,6 +72,8 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
     const [help, setHelp] = React.useState('')
     const [adminhint, setAdminhint] = React.useState('')
 
+    const [tokeninfo, setTokenInfo] = React.useState(types.EmptyKnotFreeTokenPayload);
+
     const defaultState: State = {
         pendingCommandNonc: '',
         returnValue: '-none-',
@@ -89,7 +93,7 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
 
         var message: string = reply.message
 
-        //console.log("ThingCard got message", message)
+        console.log("ThingCard got message", message)
         const newState: State = {
             ...state,
             returnValue: message,
@@ -159,13 +163,24 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
 
             console.log("thing details card sending ", config.commandString)
 
+            let ourArgs: string[] = [
+                ...args
+            ]
+            if (config.cmdArgCount === 0) {
+                ourArgs = []
+            } else {
+                // we have to quote them 
+                for (let i = 0; i < ourArgs.length; i++) {
+                    ourArgs[i] = '"' + ourArgs[i] + '"'
+                }
+            }
+
             let request: types.PublishArgs = {
                 ...types.EmptyPublishArgs,
                 ...config,
                 cb: gotReturnValue,
                 serverName: app.serverName,
-                commandString: config.commandString,
-                args: args,
+                args: ourArgs,
             }
             pipeline.Publish(request)
         }
@@ -175,6 +190,12 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
                 let rparts = h.split('\n')
                 setCommands(rparts);
                 setHelp(h);
+            })
+        }
+        if (tokeninfo.jti === '' && longNameIsGood && config.thingPublicKey !== '' && config.adminPublicKey !== '') {
+            tokenCache.subscribe(config.longName, state.uniqueid,config, (h: types.KnotFreeTokenPayload) => {
+                // console.log('thing DETAILS tokenCache.subscribe got token info', h)
+                setTokenInfo(h);
             })
         }
 
@@ -201,6 +222,8 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
             configMgr.unsubscribe(props.index, state.uniqueid)
             shortnameCache.unsubscribe(config.longName, state.uniqueid)
             pubkCache.unsubscribe(config.longName, state.uniqueid)
+            pubkCache.unsubscribe(config.longName, state.uniqueid)
+            tokenCache.unsubscribe(config.longName, state.uniqueid)
         };
     })
 
@@ -241,24 +264,24 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
         console.log("new Thing name", str)
         let newName: string = str
 
-        const newConfig: saved.ThingConfig = {
-            ...saved.EmptyThingConfig,
-            longName: newName,
+        if (newName !== config.longName) {
+            const newConfig: saved.ThingConfig = {
+                ...saved.EmptyThingConfig,
+                longName: newName,
+            }
+            configMgr.publish(props.index, newConfig)
+
+            setHelp('')
+            setCommands([])
         }
-
-        configMgr.publish(props.index, newConfig)
-
-        setHelp('')
-        setCommands([])
     }
     function returnThingName(): JSX.Element {
-
-        console.log('returnThingName editThingName', editThingName)
 
         if (editThingName) {
             return (
                 <span className='commandInputSpan'>
                     <TextField
+                        autoFocus
                         onChange={thingNameChanged}
                         onBlur={blurThingName}
                         // id="outlined-helperText"
@@ -305,7 +328,7 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
         if (adminhint.length > 0) {
             // calc pub and priv key
             const [pub, priv] = utils.getBase64FromPassphrase(str)
-            
+
             // search for matches in OUR config
             const hints = adminhint.split(' ')
             for (let i = 0; i < hints.length; i++) {
@@ -346,6 +369,7 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
             return (
                 <span className='commandInputSpan'>
                     <TextField
+                        autoFocus
                         onChange={adminKeyChanged}
                         onBlur={blurAdminKey}
                         // id="outlined-helperText"
@@ -552,7 +576,7 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
                 <div className='offline' >{offline}</div>
 
                 <div className='detailsDiv'>
-                {returnThingName()}
+                    {returnThingName()}
                 </div>
 
                 {/* <div className='detailsDiv'>
@@ -570,11 +594,11 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
 
                 </div> */}
 
-<div className='spacingDiv'>&#160;</div>
+                <div className='spacingDiv'>&#160;</div>
 
                 <div className='detailsDiv'>
 
-                    {returnAdmin() }
+                    {returnAdmin()}
                     {/* {adminPass()}
                     <span>
                         <input type="submit" value="set" onClick={handleSetAdminPassClick} />
@@ -615,7 +639,7 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
                     <button type="button" onClick={handleSelectClick} className='cmdButton' >Choose command</button>
 
                 </div>
-                <div className='spacingDiv'>&#160;</div>
+                <div className='spacingDivHalf'>&#160;</div>
 
                 <div className='detailsDiv'>
                     <span className='cmdSpan'>
@@ -645,7 +669,7 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
                 <div className='cardRow2'>
                     {makeArgs()}
                 </div>
-                <div className='detailsDiv'>&#160;</div>
+                {/* <div className='detailsDiv'>&#160;</div> */}
 
                 <div className='detailsDiv'>
                     <span className='resultSpan'>
@@ -657,6 +681,19 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
                         </div>
                     </span>
                 </div>
+                <div className='spacingDivHalf'>&#160;</div>
+                <div className='detailsDiv'>
+                    <span className='cmdSpan'>
+                        <div className='overlay3' >
+                            Token info:
+                        </div>
+
+                        <div className='segment' >
+                            {helpers.LinesToParagraphs(utils.TokenPayloadToText(tokeninfo))}
+                        </div>
+                    </span>
+                </div>
+
 
 
             </DialogContent>
@@ -686,6 +723,7 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
                 {config.adminPublicKey.length > 0 ? ' ak' : ''}
                 {config.thingPublicKey.length > 0 ? ' pk' : ''}
                 {config.shortName.length > 0 ? ' sn' : ''}
+                {tokeninfo.jti.length >0 ? ' to' : ''}
             </div>
 
         </Dialog>

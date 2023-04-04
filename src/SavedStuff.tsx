@@ -48,12 +48,6 @@ export const TestThingsConfig: ThingsConfig = {
 }
 
 
-// export type GlobalConfig = {
-
-//     adminPublicKey: string // in base64 format
-//     adminPrivateKey: string // in base64 format
-// }
-
 export type ThingsConfig = {
 
     // globalConfig: GlobalConfig

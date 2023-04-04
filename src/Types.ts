@@ -163,6 +163,7 @@ export type ClusterStat = {
     tcp: string
     guru: boolean
     mem: number
+    con: number
     limits: {
         contactStats: KnotFreeTokenStats
     }

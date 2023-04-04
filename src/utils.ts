@@ -4,6 +4,36 @@ import { Buffer } from 'buffer'
 import * as b64 from "./TypescriptBase64"
 import sha256 from "fast-sha256";
 import * as types from "./Types";
+import * as  saved from './SavedStuff';
+import * as configMgr from './store/thingConfigMgr'
+import * as allMgr from './store/allThingsConfigMgr'
+
+
+// search for admin hint matches
+export function searchForAdminHintMatches(index: number, config:saved.ThingConfig ,adminhint: string) {
+
+    // let's snoop around looking for another thing with the same admin hint
+    // and then copy his adminPublicKey and adminPrivateKey to ourselves
+    const all = allMgr.GetGlobalConfig()
+    const parts = adminhint.split(' ')
+    for (let i = 0; i < parts.length; i++) {
+        if (parts[i].length === 0) {
+            continue
+        }
+        const hint = parts[i]
+        for (let j = 0; j < all.things.length; j++) {
+            if (all.things[j].adminPublicKey.substring(0, 8) === hint) {
+                const newConfig = {
+                    ...config,
+                    adminPublicKey: all.things[j].adminPublicKey,
+                    adminPrivateKey: all.things[j].adminPrivateKey,
+                }
+                configMgr.publish(index, newConfig)
+                return
+            }
+        }
+    }
+}
 
 
 // See Helpers.tsx for utilities that return JSX
@@ -126,6 +156,24 @@ export function randomString(len: number) {
     return randomString;
 }
 
+export function TokenPayloadToText(payload: types.KnotFreeTokenPayload): string {
+
+    let expires = new Date(payload.exp * 1000)
+    let expiresStr = expires.getFullYear() + '-' + (expires.getMonth() + 1) + '-' + expires.getDate()
+    if (payload.exp <= 1) {
+        expiresStr = 'unknown'
+    }
+    let str = ''
+    str += 'Maximum subscriptions       = ' + payload.su + "\n"
+    str += 'Maximum connections         = ' + payload.co + "\n"
+    str += 'Maximum bytes per sec input = ' + payload.in + "\n"
+    str += 'Maximum bytes per sec output = ' + payload.out + "\n"
+    str += 'Token expires               = ' + expiresStr + "\n"
+    str += 'Token server                = ' + payload.url + "\n"
+    str += 'Token billing key           = ' + payload.jti + "\n"
+    return str
+}
+
 export function TokenToLimitsText(token: string): string {
     let str = ''
 
@@ -134,17 +182,7 @@ export function TokenToLimitsText(token: string): string {
         return error
     }
 
-    let expires = new Date(payload.exp * 1000)
-    let expiresStr = expires.getFullYear() + '-' + (expires.getMonth() + 1) + '-' + expires.getDate()
-
-    str += 'Maximum subscriptions       = ' + payload.su + "\n"
-    str += 'Maximum connections         = ' + payload.co + "\n"
-    str += 'Maximum bytes per sec input = ' + payload.in + "\n"
-    str += 'Maximum bytes per sec output = ' + payload.out + "\n"
-    str += 'Token expires               = ' + expiresStr + "\n"
-    str += 'Token server                = ' + payload.url + "\n"
-    str += 'Token billing key           = ' + payload.jti + "\n"
-
+    str = TokenPayloadToText(payload)
     return str
 }
 

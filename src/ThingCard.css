@@ -18,8 +18,21 @@
     right: 32px;
 }
 
+.expires {
+    color: black;
+    font-size: 0.5rem;
+    position: absolute;
+    top: 0;
+    right: 64px;
+}
+
 .spacingDiv {
     margin: 8px;
+}
+
+.spacingDivHalf {
+    margin: 0px;
+    padding: 0;
 }
 
 .cardRow1 {
@@ -218,7 +231,7 @@ span.moreDevInfoWrapper {
     width: 100%;
     height: 100%;
     border-color: grey;
-    background-color: white;
+    background-color: rgb(252, 252, 252);
     border-radius: 8px;
     min-width: 64px;
     font-size: larger;

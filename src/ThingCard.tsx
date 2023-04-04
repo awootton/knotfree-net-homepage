@@ -23,6 +23,7 @@ import * as app from './App'
 
 import * as detailsDialog from './dialogs/ThingDetailsDialog'
 import * as helpCache from './store/helpCache'
+import * as tokenCache from './store/tokenCache'
 import * as shortnameCache from './store/shortnameCache'
 import * as adminhintCache from './store/adminhintCache'
 import * as pubkCache from './store/pubkCache'
@@ -54,6 +55,8 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
     }
 
     const [help, setHelp] = React.useState('');
+
+    const [tokeninfo, setTokenInfo] = React.useState(types.EmptyKnotFreeTokenPayload);
 
     const [adminhint, setAdminhint] = React.useState('');
 
@@ -153,6 +156,13 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
             })
         }
 
+        if (tokeninfo.jti === "" && longNameIsGood && config.thingPublicKey !== '' && config.adminPublicKey !== '') {
+            tokenCache.subscribe(config.longName, state.uniqueid,config, (h: types.KnotFreeTokenPayload) => {
+                // console.log('thingcard tokenCache.subscribe got token info', h)
+                setTokenInfo(h);
+            })
+        }
+
         if (adminhint === '' && config.longName !== '') {
 
             adminhintCache.subscribe(config.longName, state.uniqueid, (h: string) => {
@@ -163,6 +173,8 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
                     return
                 }
                 setAdminhint(h)
+
+                utils.searchForAdminHintMatches(index, config, h)
             })
         }
 
@@ -190,6 +202,12 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
                 args: ourArgs,
             }
             pipeline.Publish(request)
+            const newState: State = {
+                ...state,
+                pendingCommandNonc: ''
+            }
+            setState(newState)
+
         }
 
         configMgr.subscribe(index, state.uniqueid, (newConfig: saved.ThingConfig) => {
@@ -203,6 +221,7 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
             configMgr.unsubscribe(index, state.uniqueid)
             shortnameCache.unsubscribe(config.longName, state.uniqueid)
             pubkCache.unsubscribe(config.longName, state.uniqueid)
+            tokenCache.unsubscribe(config.longName, state.uniqueid)
         };
     })
 
@@ -220,19 +239,6 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
         setArgs(newArgs)
     }
 
-    // changeThingName changes the longName and when that happens everything else changes. setLongName
-    // function changeThingName(e: any) { // on the blur unfocus
-    //     const str: string = e.target.value
-    //     console.log("new Thing name", str)
-    //     let newName: string = str
-    //     const newConfig: saved.ThingConfig = {
-    //         ...saved.EmptyThingConfig,
-    //         longName: newName,
-    //     }
-    //     configMgr.publish(index, newConfig)
-    //     setHelp('')
-    //     setCommands([])
-    // }
 
     function doCommandAttempt() {
 
@@ -349,8 +355,8 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
         }
         configMgr.publish(index, newConfig)
 
-        // also issue the command
-        if (h.argCount == 0) {
+        // also issue the command TODO: this has been failing FIXME:
+        if ( false && h.argCount === 0) {
 
             let nonc = utils.randomString(24)
 
@@ -427,9 +433,20 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
         trimmedDescription = trimmedDescription.substring(0, 18) + '...'
     }
 
+    // console.log("ThingCard has expires ", tokeninfo.exp)
+    const expiresDate = new Date(tokeninfo.exp * 1000)
+    let expires = 'exp:' + expiresDate.getFullYear() + '-' + (expiresDate.getMonth() + 1) + '-' + expiresDate.getDate() 
+    if (tokeninfo.exp <= 1) {
+        expires = 'exp: unknown'
+    }
     let offline = adminhint.length > 0 ? '' : 'offline'
 
-    const [editThingName, setEditThingName] = React.useState(false)
+    let defaultEditThingName = false
+    if (config.longName === '') {
+        defaultEditThingName = true
+    }
+
+    const [editThingName, setEditThingName] = React.useState(defaultEditThingName)
 
     function focusThingName() {
         console.log('focusThingName')
@@ -438,24 +455,25 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
 
     function blurThingName(e: any) {
         console.log('focusThingName')
-        // setThingNameFocused(true)
-        const str: string = e.target.value
-        console.log("new Thing name", str)
-        let newName: string = str
-        const newConfig: saved.ThingConfig = {
-            ...saved.EmptyThingConfig,
-            longName: newName,
-        }
-        configMgr.publish(index, newConfig)
-        setHelp('')
-        setCommands([])
 
+        const str: string = e.target.value
+        if (str !== config.longName) {
+            console.log("new Thing name", str)
+            let newName: string = str
+            const newConfig: saved.ThingConfig = {
+                ...saved.EmptyThingConfig,
+                longName: newName,
+            }
+            configMgr.publish(index, newConfig)
+            setHelp('')
+            setCommands([])
+        }
     }
 
     function thingNameChanged(e: React.ChangeEvent<HTMLInputElement>) {
         let str = e.currentTarget.value
         str = str.toLowerCase()
-        str = str.replace(/[^a-z0-9\-]/g, '')
+        str = str.replace(/[^a-z0-9-]/g, '')
         e.currentTarget.value = str
     }
 
@@ -464,7 +482,8 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
         if (editThingName) {
             return (
                 <span className='commandInputSpan'>
-                    <TextField
+                    <TextField 
+                        autoFocus
                         onChange={thingNameChanged}
                         onBlur={blurThingName}
                         // id="outlined-helperText"
@@ -476,10 +495,8 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
                     />
                 </span>
             )
-
         } else {
             return (
-
                 <span className='commandSpan'>
                     <div className='overlay' >
                         Thing name:
@@ -502,16 +519,16 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
 
     function adminKeyChanged(e: React.ChangeEvent<HTMLInputElement>) {
         let str = e.currentTarget.value
-        console.log("adminKeyChanged", str)
-        if ( adminhint.length > 0) {
+        // console.log("adminKeyChanged", str)
+        if (adminhint.length > 0) {
             // calc pub and priv key
             const [pub, priv] = utils.getBase64FromPassphrase(str)
 
             // search for matches in OUR config
             const hints = adminhint.split(' ')
-            for ( let i = 0; i < hints.length; i++) {
+            for (let i = 0; i < hints.length; i++) {
                 const hint = hints[i]
-                if (hint == pub.substring(0, 8)) {
+                if (hint === pub.substring(0, 8)) {
                     // match
                     console.log("match")
                     const newConfig: saved.ThingConfig = {
@@ -523,7 +540,7 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
                     setEditAdminKey(false)
                 }
             }
-        }  else {
+        } else {
             // what?
         }
     }
@@ -542,11 +559,16 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
         if (config.longName === '') {
             needsEditAdminKey = true
         }
+        let needsFocus = true 
+        if  (editThingName) {
+            needsFocus = false
+        }
 
         if (needsEditAdminKey) {
             return (
                 <span className='commandInputSpan'>
                     <TextField
+                        autoFocus = {needsFocus}
                         onChange={adminKeyChanged}
                         onBlur={blurAdminKey}
                         // id="outlined-helperText"
@@ -592,6 +614,7 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
         <Card variant="outlined" className='devCard'>
 
             <div className='offline' >{offline}</div>
+            <div className='expires' >{expires}</div>
 
             <div className='cardRow1' >
 
@@ -652,6 +675,7 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
                 {config.adminPublicKey.length > 0 ? ' ak' : ''}
                 {config.thingPublicKey.length > 0 ? ' pk' : ''}
                 {config.shortName.length > 0 ? ' sn' : ''}
+                {tokeninfo.jti.length >0 ? ' to' : ''}
             </div>
         </Card>
 

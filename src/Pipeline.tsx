@@ -266,6 +266,7 @@ function EncryptReturn(reply: PublishReply) {
             // remove the '='
             localmessage = reply.message.substring(1)
         }
+        reply.nonce = reply.nonce.split(' ')[0]// sometimes there are two todo: stop that.
         console.log('localmessage', localmessage, 'decrypt nonc', reply.nonce)
 
         const theirPubk = Buffer.from(reply.thingPublicKey, 'base64')
