@@ -15,7 +15,8 @@
     border-color: grey;
     border-style: solid;
     overflow: scroll;
-    font-size: larger;
+    /* font-size: larger; */
+    font-size: medium;
 }
 
 div.buttonsDiv {

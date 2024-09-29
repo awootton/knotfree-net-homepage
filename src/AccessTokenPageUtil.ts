@@ -2,6 +2,8 @@
 import * as nacl from 'tweetnacl-ts'
 import { Buffer } from 'buffer'
 
+import * as allMgr from './store/allThingsConfigMgr'
+import * as utils from './utils'
 
 // this is unused by the server
 function getSampleKnotFreeTokenPayload(): KnotFreeTokenPayload {
@@ -38,20 +40,20 @@ type KnotFreeTokenPayload = {
 
 type TokenRequest = {
   //
-  pkey: string                //`json:"pkey"` // a curve25519 pub key of caller
+  pubk: string                   //`json:"pubk"` // a curve25519 pub key of caller
   payload: KnotFreeTokenPayload  //`json:"payload"`
   Comment: string                //`json:"comment"`
 }
 type TokenReply = {
-  pkey: string                //`json:"pkey"` // a curve25519 pub key of caller
-  payload: string         //`json:"payload"`
-  nonce: string                 // `json:"nonce"`
+  pubk: string                //`json:"pubk"` // a curve25519 pub key of caller
+  payload: string             //`json:"payload"` - a jwt token.
+  nonce: string               // `json:"nonce"`
 }
 
 
 function getSampleKnotFreeTokenRequest(): TokenRequest {
   var res: TokenRequest = {
-    pkey: "fixme",        //    `json:"pkey"` // a curve25519 pub key of caller
+    pubk: "fixme",        //    `json:"pkey"` // a curve25519 pub key of caller url base64 
     payload: getSampleKnotFreeTokenPayload(),
     Comment: "For anon" // + util.getProfileName()             // `json:"comment"`
   }
@@ -61,27 +63,20 @@ function getSampleKnotFreeTokenRequest(): TokenRequest {
 
 export function getFreeToken(prefix: string, serverName: string, done: (ok: boolean, tok: string) => any) {
    
-  // if (process.env.NODE_ENV === "development" || serverName === 'localhost') {
-  //   serverName = serverName.replace("3000", "8085")
-  // }
-  // if (!serverName.endsWith("/")) {
-  //   serverName += "/"
-  // }
-
-  // let prefix = "http://"
-  // if ( serverName.includes("knotfree.net")){
-  //     prefix = "https://"
-  // }
   var hoststr = prefix + serverName + "api1/getToken"
 
   //console.log("it's fetch time again ... for a Token !!", hoststr)
   var data = getSampleKnotFreeTokenRequest()
   const myKeyPair: nacl.BoxKeyPair = nacl.box_keyPair()
+  let config = allMgr.GetGlobalConfig()
+  if (config.usersPublicKey !== undefined && config.usersPublicKey.length !== 0) {
+    myKeyPair.publicKey = utils.fromBase64Url(config.usersPublicKey)
+    myKeyPair.secretKey = utils.fromBase64Url(config.usersPrivateKey )
+  }
+
   // arg!! wants hex ! data.pkey =  base64url.encode(Buffer.from(keyPair.publicKey))
-  data.pkey = (Buffer.from(myKeyPair.publicKey)).toString('hex')
-  // FIXME: use fetchWithTimeout with longer timeout 
+  data.pubk = utils.toBase64Url(Buffer.from(myKeyPair.publicKey))
   console.log("AppUtil getFreeToken ", hoststr, JSON.stringify(data))
-  //const response = fetchWithTimeout(hoststr, { method: 'POST', body: JSON.stringify(data)}); // , { mode: "no-cors" });
   const response = fetch(hoststr, { method: 'POST', body: JSON.stringify(data) }); // , { mode: "no-cors" });
   response.then((resp: Response) => {
     console.log("have get free token response ", resp)
@@ -92,7 +87,7 @@ export function getFreeToken(prefix: string, serverName: string, done: (ok: bool
         // box_open(box, nonce, theirPublicKey, mySecretKey)
         // nonce is in b64 and is just a string 
         // pkey and payload ayarn re in hex
-        const pkeyBytes = Buffer.from(repl.pkey, 'hex')
+        const pkeyBytes = Buffer.from(repl.pubk, 'hex')
         const payloadBytes = Buffer.from(repl.payload, 'hex')
         const nonceBytes = Buffer.from(repl.nonce)
         const gotTok = nacl.box_open(payloadBytes, nonceBytes, pkeyBytes, myKeyPair.secretKey)
@@ -118,7 +113,7 @@ export function getFreeToken(prefix: string, serverName: string, done: (ok: bool
 }
 
 
-// Copyright 2021-2022 Alan Tracey Wootton
+// Copyright 2021-2022-2024 Alan Tracey Wootton
 // See LICENSE
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

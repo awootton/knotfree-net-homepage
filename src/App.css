@@ -37,6 +37,7 @@ main {
     from {
         transform: rotate(0deg);
     }
+
     to {
         transform: rotate(0deg);
     }
@@ -82,10 +83,17 @@ span.help {
 button.help {
     background-color: black;
     color: lightblue;
+    font-size: calc(24px);
 }
 
 span.NetStatus {
     font-size: calc(10px);
     background-color: black;
     margin-left: auto;
+}
+
+.tab-tooltip-content {
+    white-space: pre-wrap;
+    /* wrap long lines */
+    max-width: 128px;
 }

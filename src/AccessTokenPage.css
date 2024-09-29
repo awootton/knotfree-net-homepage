@@ -14,6 +14,12 @@
     font-size: larger;
 }
 
+.tokenMainDiv {
+ 
+    font-size: medium;
+}
+
+
 button.myButtons {
     margin: 4px;
     padding: 4px;
@@ -22,4 +28,8 @@ button.myButtons {
 
 .tokenDiv {
     position: relative;
+}
+
+.smallerIcon {
+    scale:calc(0.5);
 }

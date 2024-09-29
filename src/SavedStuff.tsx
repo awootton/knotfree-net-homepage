@@ -44,18 +44,26 @@ export const TestThingConfig: ThingConfig = {
 }
 
 export const TestThingsConfig: ThingsConfig = {
+
+    usersPublicKey: 'oXbblDIxBsJSt2tYSt20bNLsqs9vIcvZ-WPfZ2uHGgg', // in base64 format 
+    usersPrivateKey: 'qhZfxAgr5TypCJ-eQ94pf_LoSskBvVAnYfAKx10ppOA', // in base64 format 
+
     things: []
 }
 
 
 export type ThingsConfig = {
 
-    // globalConfig: GlobalConfig
+    // add users key for reserving topics
+    // the pubk should match the one in the token.
+    usersPublicKey: string, // in base64 format 
+    usersPrivateKey: string, // in base64 format 
+
 
     things: ThingConfig[]
 }
 
-// ValidateThingsConfig will throw if the object is not really a  ThingsConfig
+// ValidateThingsConfig will throw if the object is not really a ThingsConfig
 // it's meant to follow JSON.parse in a try-catch
 // TODO: automate somehow. Test.
 export function ValidateThingsConfig(config: ThingsConfig) {

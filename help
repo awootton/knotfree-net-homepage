@@ -1,0 +1,16 @@
+[favicon.ico] 
+[get admin hint] the first chars of the admin public keys🔓
+[get c] temperature in C🔓
+[get count] how many served since reboot
+[get f] temperature in F🔓
+[get fail] how many requests were bad since reboot
+[get long name] the global name
+[get pubk] device public key 🔓
+[get random] returns a random integer
+[get short name] the local name🔓
+[get some text] return the saved text
+[get time] seconds since 1970🔓
+[get token] info about the token
+[help] lists all commands. 🔓 means no encryption required
+[set some text] +1 save some text
+[version] info about this thing

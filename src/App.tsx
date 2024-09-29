@@ -13,6 +13,9 @@ import AppBar from '@mui/material/AppBar';
 import IconButton from '@mui/material/IconButton';
 import MenuIcon from '@mui/icons-material/Menu';
 
+import { Tooltip } from 'react-tooltip'
+
+
 
 import { HomePage } from './HomePage'
 import { AccessTokenPage } from './AccessTokenPage'
@@ -26,34 +29,39 @@ import * as utils from './utils'
 
 import Toolbar from '@mui/material/Toolbar';
 import * as registry from './ChangeRegistry'
-import {MarkdownDialog} from "./dialogs/MarkdownDialog"
+import { MarkdownDialog } from "./dialogs/MarkdownDialog"
+
+import { NamesPanel } from './NamesPanel'
 
 (window as any).global = window;
 // @ts-ignore
 window.Buffer = window.Buffer || Buffer
 
-
+// TODO: this is a mess that accumilated over time. Clean it up.
 export let serverName = window.location.hostname
+export var httpTarget = 'knotfree.io' // todo: use this and lose serverName
 export let prefix = "https://"
 export let isDev = false
 export let forceLocalMode = false
 
+export let subdomainHttpTarget = 'knotfree.net/'
+export let subdomainPrefix = 'http://'
 
 console.log("window.location.port", window.location.port)
 
 if (window.location.port === "3000") {
-    // is local dev moce 
+  // is local dev moce 
   serverName = "knotfree.com:8085"
   isDev = true
   prefix = "http://"
 
   // for debug against prod only:
-  serverName = "knotfree.net"
-  prefix = "https://"
+  // serverName = "knotfree.net"
+  // prefix = "https://"
 
   // serverName = "knotfree.io"
   // prefix = "http://"
-  //forceLocalMode = true
+  // forceLocalMode = true
 
 }
 serverName = serverName + '/'
@@ -61,11 +69,6 @@ serverName = serverName + '/'
 
 export var useMqtt = false
 export var useHttp = true // else if not mqtt use http
-
-export let helpPrefix = prefix+serverName+"api1/rawgithubusercontentproxy/awootton/knotfree-help-content/main/"
-if (isDev) {
-  helpPrefix = "http://localhost:4321/"
-}
 
 console.log("Top of App Top of App Top of App Top of App Top of App Top of App v0.1.5 serverName:", prefix, serverName)
 
@@ -77,15 +80,36 @@ if (!mqtt.StartMqtHappened && useMqtt) {
   }, 10)
 
 }
-
-export var httpTarget = 'knotfree.io'
+// TODO: this is a mess that accumilated over time. Clean it up.
 if (serverName.includes('knotfree.io')) {
   httpTarget = 'knotfree.io'
+  prefix = "http://"
+  subdomainHttpTarget = 'knotfree.io'
+  subdomainPrefix = "http://"
+  useHttp = false
+} else if (serverName.includes('knotfree.org')) {
+  httpTarget = 'knotfree.org'
+  prefix = "http://"
+  useHttp = false
 } else if (serverName.includes('local')) {
-  httpTarget = 'knotfree.com:8085'
+  httpTarget = 'knotfree.com:8085' // is localhost in /etc/hosts
 } else {// is knotfree.net
   httpTarget = 'knotfree.net'
+  subdomainHttpTarget = 'knotfree.net/'
+  subdomainPrefix = "https://"
 }
+
+if (serverName.split(".").length === 4) {// is dotted quad
+  httpTarget = serverName
+  prefix = "http://"
+  useHttp = false
+}
+
+export let helpPrefix = prefix + serverName + "api1/rawgithubusercontentproxy/awootton/knotfree-help-content/main/"
+if (isDev) {
+  helpPrefix = "http://localhost:4321/"
+}
+
 
 utils.StartHeartbeatTimer();
 
@@ -119,7 +143,10 @@ function TabPanel(props: TabPanelProps) {
     >
       {value === index && (
         // <Box sx={{ p: 3 }}>
-        <Typography component={'span'} variant={'body2'} >{children}</Typography>
+        // <Typography component={'span'} variant={'body2'} >{children}</Typography>
+        <div className='likeTypography'>
+          {children}
+        </div>
         // </Box>
       )}
     </div>
@@ -141,18 +168,18 @@ export function VerticalTabs() {
 
   var starting = saved.getTabState()
 
-  // do we need this. no, it's evil ?
+  // do we need this. no, it's evil ? because I didn't fix it
   // note the numbers though.
   // if (window.location.pathname === '/token') {
   //   starting = 1
   // }
-  // // if (window.location.pathname === '/setup') {
-  // //   starting = 2
-  // // }
-  // if (window.location.pathname === '/Things') {
-  //   starting = 3
+  // if (window.location.pathname === '/things') {
+  //   starting = 2
   // }
-  // if (window.location.pathname === '/more') {
+  // // if (window.location.pathname === '/names') {
+  // //   starting = 3
+  // // }
+  // if (window.location.pathname === '/misc') { // aka more
   //   starting = 4
   // }
 
@@ -167,19 +194,12 @@ export function VerticalTabs() {
   )
 
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
-    // since we left out #2 we have to pick a value that is not 2
-    if (newValue >= 2) {
-      newValue += 1 // use mapping table TODO
-    }
     saved.setTabState(newValue)
     setValue(newValue);
   };
 
   const tabs = (): ReactElement => {
     let ordinalValue = value
-    if (ordinalValue >= 2) {
-      ordinalValue -= 1 // use mapping table TODO
-    }
     return (
       <>
         <Tabs
@@ -187,15 +207,50 @@ export function VerticalTabs() {
           variant="scrollable"
           value={ordinalValue}
           onChange={handleChange}
-          aria-label="Vertical tabs example"
+          aria-label="Vertical tabs"
           sx={{ borderRight: 1, borderColor: 'divider' }}
         >
-          <Tab label="Knotfree" {...a11yProps(0)} />
-          <Tab label="Access Token" {...a11yProps(1)} />
-          {/* <Tab label="Setup" {...a11yProps(2)} /> */}
-          <Tab label="Things" {...a11yProps(3)} />
-          <Tab label="Misc" {...a11yProps(4)} />
+          <Tab label="Knotfree" {...a11yProps(0)}
+            data-tooltip-id="tabs-tooltip-home"
+          />
+          <Tab label="Access Token" {...a11yProps(1)}
+            data-tooltip-id="tabs-tooltip-token"
+          />
+          <Tab label="Things" {...a11yProps(2)}
+            data-tooltip-id="tabs-tooltip-things"
+          />
+          <Tab label="Names" {...a11yProps(3)}
+            data-tooltip-id="tabs-tooltip-names"
+          />
+          <Tab label="Misc" {...a11yProps(4)}
+            data-tooltip-id="tabs-tooltip-misc"
+          />
         </Tabs>
+        <Tooltip id="tabs-tooltip-home" place="bottom">
+          <div className="tab-tooltip-content">
+            The Knotfree homepage with help and information.
+          </div>
+        </Tooltip>
+        <Tooltip id="tabs-tooltip-token" place="bottom">
+          <div className="tab-tooltip-content">
+            One time security and access token setup.
+          </div>
+        </Tooltip>
+        <Tooltip id="tabs-tooltip-things" place="bottom">
+          <div className="tab-tooltip-content">
+            A page to interact with IOT devices and services.
+          </div>
+        </Tooltip>
+        <Tooltip id="tabs-tooltip-names" place="bottom">
+          <div className="tab-tooltip-content">
+            Obtain and configure internet names.
+          </div>
+        </Tooltip>
+        <Tooltip id="tabs-tooltip-misc" place="bottom">
+          <div className="tab-tooltip-content">
+            Goofy stuff.
+          </div>
+        </Tooltip>
       </>
     )
   }
@@ -209,20 +264,28 @@ export function VerticalTabs() {
       text = "Knotfree"
     }
     if (value === 1) {
-      text = "Get Token"
+      text = "Token"
     }
-    // if (value === 2) {
-    //   text = "Setup"
-    // }
-    if (value === 3) {
+
+    if (value === 2) {
       text = "Things"
     }
+
+    if (value === 3) {
+      text = "Names"
+    }
+
     if (value === 4) {
       text = "Misc"
     }
-
+    // this is the text on the top bar
     return (
-      <span className='barleft'>{text}</span>
+      <>
+        <span className='barleft'
+        >
+          {text}
+        </span>
+      </>
     )
   }
 
@@ -238,19 +301,22 @@ export function VerticalTabs() {
         <AccessTokenPage />
 
       </TabPanel>
-      {/* <TabPanel value={value} index={2}>
-      
-         <SetupThing/>
-        
-      </TabPanel> */}
-      <TabPanel value={value} index={3}>
+
+      <TabPanel value={value} index={2}>
 
         <Things />
 
       </TabPanel>
+
+      <TabPanel value={value} index={3}>
+
+        <NamesPanel />
+
+      </TabPanel>
+
       <TabPanel value={value} index={4}>
 
-        <more.MoreStuff />
+        <more.MoreStuff />  {/*  aka misc */}
 
       </TabPanel>
     </>
@@ -262,9 +328,9 @@ export function VerticalTabs() {
     setMobileOpen(!mobileOpen);
   };
 
-  function getHelpUrl(): [string,string] {
+  function getHelpUrl(): [string, string] {
 
-	// eg http://localhost:8085/api1/rawgithubusercontentproxy/awootton/knotfree-net-homepage/main/README.md
+    // eg http://localhost:8085/api1/rawgithubusercontentproxy/awootton/knotfree-net-homepage/main/README.md
 
     var path = ""
     var title = ""
@@ -276,26 +342,30 @@ export function VerticalTabs() {
       path = "tokens.md "
       title = "Access Token help"
     }
-    // if (value === 2) { // About mqtt5nano
-    //   text = "https://github.com/awootton/mqtt5nano"
-    // }
-    if (value === 3) { // Things
+
+    if (value === 2) { // Things
       path = "things.md"
       title = "Things console help"
     }
+
+    if (value === 3) { // Names
+      path = "names.md"
+      title = "Names console help"
+    }
+
     if (value === 4) { // misc
       path = "misc.md"
       title = "Miscellaneous explanations"
     }
-    return [title,path]
+    return [title, path]
   }
 
   const [isHelp, setIsHelp] = React.useState(false)
 
   function helpClicked() {
 
-    registry.PublishChange("MarkdownDialogChangeNotification","reload")// reload the markdown every damn time
-    setIsHelp(true)  
+    registry.PublishChange("MarkdownDialogChangeNotification", "reload")// reload the markdown every damn time
+    setIsHelp(true)
   }
 
   const container = window !== undefined ? () => window.document.body : undefined;
@@ -378,19 +448,24 @@ export function VerticalTabs() {
       </Box>
 
       <MarkdownDialog
-                open={isHelp}
-                onClose={() => setIsHelp(false)}
-                urlprefix={helpPrefix}
-                path={helpPath}
-                title={helpTitle}
-            />
+        open={isHelp}
+        onClose={() => setIsHelp(false)}
+        urlprefix={helpPrefix}
+        path={helpPath}
+        title={helpTitle}
+      />
+
+{/* <div className="tab-tooltip-content">
+            One time security and access token setup.
+          </div> */}
+
 
     </div>
   )
 
   // http://localhost:8085/api1/rawgithubusercontentproxy/awootton/knotfree-net-homepage/main/README.md
   // https://knotfree.net/api1/rawgithubusercontentproxy/awootton/knotfree-net-homepage/main/README.md
-  
+
 
 }
 

@@ -3,6 +3,8 @@ import preval from 'preval.macro'
 import { Button } from '@mui/material'  // Card,Paper
 
 import { CopyToClipboard } from 'react-copy-to-clipboard'
+import { Tooltip } from 'react-tooltip'
+
 
 import * as helpers from './Utils-tsx'
 import * as types from './Types'
@@ -112,7 +114,7 @@ export const MoreStuff: FC<Props> = (props: Props): ReactElement => {
         str += 'lsof count = ' + stat.con + '\n'
 
         return (
-            <div className = 'stat' key={index}>
+            <div className='stat' key={index}>
                 <div className='overlay' >
                     Usage for {stat.name}
                 </div>
@@ -126,7 +128,7 @@ export const MoreStuff: FC<Props> = (props: Props): ReactElement => {
     // marshal into stats and then write as array of divs with lines
     function formatStats(): ReactElement[] {
         console.log("stats raw")
-        if ( clusterStats.Stats.length === 0) {
+        if (clusterStats.Stats.length === 0) {
             return ([])
         }
         const stats = clusterStats;
@@ -147,7 +149,7 @@ export const MoreStuff: FC<Props> = (props: Props): ReactElement => {
 
     function resetConfig() {
         const config = saved.TestThingsConfig
-        allMgr.publish(config,true)
+        allMgr.publish(config, true)
         setConfirm(false)
     }
 
@@ -168,7 +170,7 @@ export const MoreStuff: FC<Props> = (props: Props): ReactElement => {
         try {
             const got: saved.ThingsConfig = JSON.parse(str)
             saved.ValidateThingsConfig(got)
-            allMgr.publish(got,true)
+            allMgr.publish(got, true)
             setErrorstr('')
         } catch (e) {
             setErrorstr("Incorrect config:" + e)
@@ -208,13 +210,20 @@ export const MoreStuff: FC<Props> = (props: Props): ReactElement => {
             <div className='segment'>
                 <p>
                     Build Date: {preval`module.exports = new Date().toLocaleString();`}.
-               <br />
-                Shift click reload, <span className='reload' > ⟳ </span>, in the browser to get the latest version.</p>
+                    <br />
+                    Shift click reload, <span className='reload' > ⟳ </span>, in the browser to get the latest version.</p>
             </div>
 
             <div className='segment'>
 
-                <Button variant='outlined' onClick={() => setIsStars(true)}>push me</Button>
+                <Button variant='outlined' onClick={() => setIsStars(true)}
+                data-tooltip-id="stars-tooltip"
+                data-tooltip-content="Show silly programmers easter egg."
+                >
+                    push me
+                </Button>
+                <Tooltip id="stars-tooltip" place = "right"/>
+
 
             </div>
 
@@ -235,7 +244,7 @@ export const MoreStuff: FC<Props> = (props: Props): ReactElement => {
                 default=''
             />
             <div className='segment'>
-            Just 4 of these words would require 1,000,000,000,000 guesses to crack. Every word makes it 1000 times harder.
+                Just 4 of these words would require 1,000,000,000,000 guesses to crack. Every word makes it 1000 times harder.
 
                 <Button variant='outlined' onClick={getPassword}>Get Password Ideas</Button>
                 <div>

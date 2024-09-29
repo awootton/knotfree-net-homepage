@@ -6,7 +6,6 @@ import * as utils from './utils'
 import * as app from './App'
 //import * as saved from './SavedStuff'
 import { PublishArgs, PublishReply } from './Types'
-import { CropLandscapeOutlined } from '@mui/icons-material'
 
 // The entry point for the pipeline is the Publish function.
 // We will check a cache for the value. If found then return it.
@@ -48,10 +47,11 @@ setInterval(() => {
 
 export function Publish(request: PublishArgs) {
 
-    if ( app.forceLocalMode) {
+    if (app.forceLocalMode) {
         request.isHttps = false
         request.isHttp = true
     }
+    request.serverName = app.subdomainHttpTarget
 
     if (request.thingPublicKey.length === 0) {
         request.needsEncrypt = false
@@ -269,18 +269,18 @@ function EncryptReturn(reply: PublishReply) {
         reply.nonce = reply.nonce.split(' ')[0]// sometimes there are two todo: stop that.
         console.log('localmessage', localmessage, 'decrypt nonc', reply.nonce)
 
-        const theirPubk = Buffer.from(reply.thingPublicKey, 'base64')
-        const ourAdminPrivk = Buffer.from(reply.adminPrivateKey, 'base64')
-        const bmessage = Buffer.from(localmessage, 'base64')
+        const theirPubk = utils.fromBase64Url(reply.thingPublicKey)
+        const ourAdminPrivk = utils.fromBase64Url(reply.adminPrivateKey)
+        const bmessage = utils.fromBase64Url(localmessage)
         var dec = Buffer.from("UnBoxIt failed")
         try {
             dec = utils.UnBoxIt(bmessage, Buffer.from(reply.nonce), theirPubk, ourAdminPrivk)
         } catch (e) {
             console.log("UnBoxIt failed", e)
         }
-       
+
         reply.message = dec.toString()
-        if (reply.message.length == 0) {
+        if (reply.message.length === 0) {
             console.log('decryption failed len=0', dec)
             reply.message = 'error decryption failed len=0'
             RetryReturn(reply)
@@ -313,11 +313,10 @@ function EncryptReturn(reply: PublishReply) {
 
 // will call https with the long name
 // if it was encrypted then the args are packaged in the message already.
+// it mught not be https dependingon variables in App
 function Https(request: PublishArgs) {
 
-    // const type = app.isDev ? 'http://' : 'https://'
-
-    let url = app.prefix + request.longName + '.' + request.serverName + request.path
+    let url = app.subdomainPrefix + request.longName + '.' + request.serverName + request.path
 
     console.log('Https url:', url)
 
@@ -329,7 +328,7 @@ function Https(request: PublishArgs) {
                 let str: string = data
                 console.log('data received ' + str.slice(0, 20))
                 let n = response.headers.get('nonc')
-                if ( n?.startsWith('[')) {
+                if (n?.startsWith('[')) {
                     n = n.substring(1)
                     n = n.substring(0, n.length - 1)
                 }
@@ -361,7 +360,7 @@ function Http(request: PublishArgs) {
                 let str: string = data
                 console.log('data received ' + str)
                 let n = response.headers.get('nonc')
-                if ( n?.startsWith('[')) {
+                if (n?.startsWith('[')) {
                     n = n.substring(1)
                     n = n.substring(0, n.length - 1)
                 }

@@ -21,6 +21,19 @@ export function searchForAdminHintMatches(index: number, config:saved.ThingConfi
             continue
         }
         const hint = parts[i]
+        // also check the users public key for a match
+        if ( all.usersPublicKey !== undefined && all.usersPublicKey !== ""){
+            if (all.usersPublicKey.substring(0, 8) === hint) {
+                const newConfig = {
+                    ...config,
+                    adminPublicKey: all.usersPublicKey,
+                    adminPrivateKey: all.usersPrivateKey,
+                }
+                configMgr.publish(index, newConfig)
+                return
+            }    
+        }
+        // walk the other things.
         for (let j = 0; j < all.things.length; j++) {
             if (all.things[j].adminPublicKey.substring(0, 8) === hint) {
                 const newConfig = {
@@ -37,7 +50,6 @@ export function searchForAdminHintMatches(index: number, config:saved.ThingConfi
 
 
 // See Helpers.tsx for utilities that return JSX
-
 
 export function BoxItItUp(message: Buffer, nonce: Buffer, theirPublicKey: Buffer, ourSecretKey: Buffer): Buffer {
     const mySecretKey = ourSecretKey
@@ -171,6 +183,7 @@ export function TokenPayloadToText(payload: types.KnotFreeTokenPayload): string 
     str += 'Token expires               = ' + expiresStr + "\n"
     str += 'Token server                = ' + payload.url + "\n"
     str += 'Token billing key           = ' + payload.jti + "\n"
+    str += 'User public key             = ' + payload.pubk + "\n"
     return str
 }
 
@@ -197,7 +210,7 @@ export function KnotFreeTokenStatsToText(payload: types.KnotFreeTokenStats): str
     return str
 }
 
-// Copyright 2021-2022 Alan Tracey Wootton
+// Copyright 2021-2022-2024 Alan Tracey Wootton
 // See LICENSE
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

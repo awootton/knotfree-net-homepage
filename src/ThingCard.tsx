@@ -9,6 +9,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Menu from '@mui/material/Menu';
 
 import CircularProgress from '@mui/material/CircularProgress';
+import { Tooltip } from 'react-tooltip'
 
 import './ThingCard.css'
 
@@ -157,7 +158,7 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
         }
 
         if (tokeninfo.jti === "" && longNameIsGood && config.thingPublicKey !== '' && config.adminPublicKey !== '') {
-            tokenCache.subscribe(config.longName, state.uniqueid,config, (h: types.KnotFreeTokenPayload) => {
+            tokenCache.subscribe(config.longName, state.uniqueid, config, (h: types.KnotFreeTokenPayload) => {
                 // console.log('thingcard tokenCache.subscribe got token info', h)
                 setTokenInfo(h);
             })
@@ -356,7 +357,7 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
         configMgr.publish(index, newConfig)
 
         // also issue the command TODO: this has been failing FIXME:
-        if ( false && h.argCount === 0) {
+        if (false && h.argCount === 0) {
 
             let nonc = utils.randomString(24)
 
@@ -435,7 +436,7 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
 
     // console.log("ThingCard has expires ", tokeninfo.exp)
     const expiresDate = new Date(tokeninfo.exp * 1000)
-    let expires = 'exp:' + expiresDate.getFullYear() + '-' + (expiresDate.getMonth() + 1) + '-' + expiresDate.getDate() 
+    let expires = 'exp:' + expiresDate.getFullYear() + '-' + (expiresDate.getMonth() + 1) + '-' + expiresDate.getDate()
     if (tokeninfo.exp <= 1) {
         expires = 'exp: unknown'
     }
@@ -454,7 +455,7 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
     }
 
     function blurThingName(e: any) {
-        console.log('focusThingName')
+        console.log('blurThingName')
 
         const str: string = e.target.value
         if (str !== config.longName) {
@@ -468,43 +469,53 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
             setHelp('')
             setCommands([])
         }
+        setEditThingName(false)
     }
 
     function thingNameChanged(e: React.ChangeEvent<HTMLInputElement>) {
         let str = e.currentTarget.value
         str = str.toLowerCase()
-        str = str.replace(/[^a-z0-9-]/g, '')
+        str = str.replace(/[^a-z0-9-_]/g, '')
         e.currentTarget.value = str
     }
 
-    function returnThingName(): JSX.Element {
+    function returnThingName( key :string ): JSX.Element {
 
         if (editThingName) {
             return (
+                <>
                 <span className='commandInputSpan'>
-                    <TextField 
+                    <TextField
                         autoFocus
                         onChange={thingNameChanged}
                         onBlur={blurThingName}
                         // id="outlined-helperText"
-                        label={"Thing name:"}
+                        label={"Editing thing name: tab or click out to save"}
                         defaultValue={config.longName}
                         helperText=""
                         fullWidth
-                    // disabled={disabled}
-                    />
+                    />            
                 </span>
+                {/* <MenuIcon/>
+                <Tooltip id={"edit-thing-name-tooltip"+key} place="top"/> */}
+                </>
             )
         } else {
             return (
-                <span className='commandSpan'>
-                    <div className='overlay' >
-                        Thing name:
-                    </div>
-                    <div onClick={focusThingName} className='commandDiv' >
-                        {config.longName.length > 0 ? config.longName : 'Step 1: Enter long name'}
-                    </div>
-                </span>
+                <>
+                    <span className='commandSpan'>
+                        <div className='overlay' 
+                            data-tooltip-id={"thing-name-tooltip"+key}
+                            data-tooltip-content="The name of an IOT device or service we can send command to. Click to Edit.">
+                            Thing name:
+                        </div>
+                        <div onClick={focusThingName} className='commandDiv' >
+                            {config.longName.length > 0 ? config.longName : 'Step 1: Enter long name'}
+                        </div>
+                        <Tooltip id={"thing-name-tooltip"+key} place='right'/>
+                    </span>
+                    
+                </>
             )
         }
     }
@@ -550,7 +561,7 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
         setEditAdminKey(false)
     }
 
-    function returnRow2(): JSX.Element {
+    function returnRow2( key : string): JSX.Element {
 
         var needsEditAdminKey = false
         if (config.adminPublicKey.length < 43) {
@@ -559,8 +570,8 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
         if (config.longName === '') {
             needsEditAdminKey = true
         }
-        let needsFocus = true 
-        if  (editThingName) {
+        let needsFocus = true
+        if (editThingName) {
             needsFocus = false
         }
 
@@ -568,7 +579,7 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
             return (
                 <span className='commandInputSpan'>
                     <TextField
-                        autoFocus = {needsFocus}
+                        autoFocus={needsFocus}
                         onChange={adminKeyChanged}
                         onBlur={blurAdminKey}
                         // id="outlined-helperText"
@@ -584,7 +595,9 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
         } else {
             return (
                 <>
-                    <span className='cmdSpan'>
+                    <span className='cmdSpan' 
+                        data-tooltip-id={"command-span-tooltip"+key}
+                        data-tooltip-content="Push to send this command to the device. Results show to the right" >
                         <div className='overlay' >
                             Command:
                         </div>
@@ -594,9 +607,8 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
                         <div className='bottomoverlay' >
                             {trimmedDescription}
                         </div>
-
                     </span>
-
+                    <Tooltip id={"command-span-tooltip"+key} place = "top"/>
                     <span className='resultSpan'>
                         <div className='overlay' >
                             Result:
@@ -618,13 +630,13 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
 
             <div className='cardRow1' >
 
-                {returnThingName()}
+                {returnThingName(props.index.toString())}
 
             </div>
             <div className='cardRow2'>
                 {/* <span className='cmdpulldown'  ><ArrowDropDownIcon onClick={handleHelpMenuPopup} style={{ fontSize: "48px" }} /></span> */}
 
-                {returnRow2()}
+                {returnRow2(props.index.toString())}
 
             </div>
 
@@ -675,7 +687,7 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
                 {config.adminPublicKey.length > 0 ? ' ak' : ''}
                 {config.thingPublicKey.length > 0 ? ' pk' : ''}
                 {config.shortName.length > 0 ? ' sn' : ''}
-                {tokeninfo.jti.length >0 ? ' to' : ''}
+                {tokeninfo.jti.length > 0 ? ' to' : ''}
             </div>
         </Card>
 

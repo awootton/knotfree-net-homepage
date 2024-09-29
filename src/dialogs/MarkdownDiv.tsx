@@ -2,8 +2,7 @@
 import React, { FC, ReactElement, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-// import   '../homepage.css'
-import   './MarkdownDialog.css'
+import './MarkdownDialog.css'
 
 // material ui
 import {
@@ -21,43 +20,38 @@ import { Close } from '@mui/icons-material/';
 import * as registry from '../ChangeRegistry';
 
 type Props = {
-    open: boolean
-    onClose: () => any
-    title: string
-    //   body: string 
-    //   onConfirm: () => any
     urlprefix: string // eg 
     path: string
 }
 
-export const MarkdownDialog: FC<Props> = (props: Props): ReactElement => {
+export const MarkdownDiv: FC<Props> = (props: Props): ReactElement => {
 
     const [theMarkdown, settheMarkdown] = React.useState("")
 
     useEffect(() => {
         if (theMarkdown.length === 0) {
-            console.log("MarkdownDialog useEffect url", props.urlprefix+props.path)
-            fetch(props.urlprefix+props.path)
+            console.log("MarkdownDiv useEffect url", props.urlprefix + props.path)
+            fetch(props.urlprefix + props.path)
                 .then((response) => response.text())
                 .then((data) => {
                     let got = data as string
-                    
+
                     const replacement = '](' + props.urlprefix
                     // replace all the link and image paths with ](/  with replacement
-                    got = got.replaceAll('](/',replacement)
-                    // console.log("MarkdownDialog using", got)
+                    got = got.replaceAll('](/', replacement)
+                    // console.log("MarkdownDiv using", got)
                     settheMarkdown(got) // causes redraws
                 })
         }
 
-        registry.SetSubscripton("MarkdownDialogChangeNotification", (name: string, arg: any) => {
-            console.log("MarkdownDialog useEffect got change notification")
+        registry.SetSubscripton("MarkdownDivChangeNotification", (name: string, arg: any) => {
+            console.log("MarkdownDiv useEffect got change notification")
             // we may consider re-writing the markdown here
             settheMarkdown("") // causes redraw
         })
     })
 
-    const renderers = {
+    const xxxrenderers = {
         //This custom renderer changes how images are rendered
         //we use it to constrain the max width of an image to its container
         image: ({
@@ -69,45 +63,29 @@ export const MarkdownDialog: FC<Props> = (props: Props): ReactElement => {
             src?: string;
             title?: string;
         }) => (
-            <img 
-                alt={alt} 
-                src={src} 
-                title={title} 
-                style={{ maxWidth: 475 }}  />
+            <img
+                alt={alt}
+                src={src}
+                title={title}
+                style={{ maxWidth: 475 }} />
         ),
     };
 
+    //   components={{ p: "div" }} // this is a hack to get rid of the <p> tags 
+
     return (
-        <Dialog open={props.open} maxWidth="sm" fullWidth
-            onClose={props.onClose}
-        >
-            <DialogTitle>{props.title}</DialogTitle>
-            <Box position="absolute" top={0} right={0}>
-                <IconButton onClick={props.onClose}>
-                    <Close />
-                </IconButton>
-            </Box>
-            <DialogContent className='likeTypography'>
-                {/* <Typography> */}
-                    <ReactMarkdown children={theMarkdown}
-                        remarkPlugins={[remarkGfm]}
-                        linkTarget="_blank"
-                    />
-                {/* </Typography> */}
-            </DialogContent>
-            <DialogActions>
-                <Button color="primary" variant="contained" onClick={props.onClose}>
-                    Done
-                </Button>
-                {/* <Button color="secondary" variant="contained" onClick={props.onConfirm}>
-                    Confirm
-                </Button> */}
-            </DialogActions>
-        </Dialog>
+        <div className='likeTypography'>
+            {/* <Typography> */}
+                <ReactMarkdown children={theMarkdown}
+                    remarkPlugins={[remarkGfm]}
+                    linkTarget="_blank"
+                />
+            {/* </Typography> */}
+        </div>
     );
 };
 
-export default MarkdownDialog;
+export default MarkdownDiv;
 
 // Copyright 2021-2022 Alan Tracey Wootton
 // See LICENSE

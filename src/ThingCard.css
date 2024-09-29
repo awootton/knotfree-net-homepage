@@ -69,6 +69,8 @@
 .commandInputSpan {
     flex: 4;
     flex-direction: row;
+
+    margin-right: 32px;
 }
 
 span.moreDevInfoWrapper {

@@ -1,0 +1,68 @@
+
+
+ 
+span.centered {
+    display: block;
+    text-align: center;
+}
+
+.centered {
+    display: block;
+    text-align: center;
+}
+
+
+.cardRow1 {
+    font-weight: bold;
+}
+
+.segment {
+    padding: 4px;
+    margin: 2px;
+    border-radius: 8px;
+    border-color: grey;
+    border-style: solid;
+    overflow: scroll;
+    /* font-size: larger; */
+    font-size: medium;
+}
+
+.nameCard {
+    padding: 4px;
+    margin: 2px;
+    border-radius: 8px;
+    border-color: black;
+    border-style: solid;
+    overflow: scroll;
+    font-size: larger;
+}
+
+.bold-segment {
+    padding: 4px;
+    margin: 2px;
+    border-radius: 8px;
+    border-color: black;
+    border-style: solid;
+    overflow: scroll;
+    font-size: larger;
+}
+
+.plain-segment {
+    padding: 4px;
+    margin: 2px;
+    border-radius: 8px;
+    border-color: white;
+    border-style: solid;
+    overflow: scroll;
+    
+}
+
+.rightJustifyButton {
+    float: right;
+}
+
+.smallerIcon {
+    font-size: smaller;
+}
+
+

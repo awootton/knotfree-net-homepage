@@ -36,7 +36,8 @@ export const ConfirmDialog: FC<Props> = (props: Props): ReactElement => {
                 </IconButton>
             </Box>
             <DialogContent>
-                <Typography>{props.body}</Typography>
+            {/* <Typography>{props.body}</Typography> */}
+            <div className = "likeTypography">{props.body}</div>
             </DialogContent>
             <DialogActions>
                 <Button color="primary" variant="contained" onClick={props.onClose}>

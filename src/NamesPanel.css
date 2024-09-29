@@ -1,0 +1,26 @@
+.segment {
+    padding: 4px;
+    margin: 2px;
+    border-radius: 8px;
+    border-color: grey;
+    border-style: solid;
+    overflow: scroll;
+    /* font-size: larger; */
+    font-size: medium;
+}
+
+
+span.radio {
+    padding: 4px;
+}
+
+.cmdButtonNarrow {
+    width: 100px;
+    height: 30px;
+    margin: 5px;
+}
+
+
+.cardRow1 {
+    font-weight: bold;
+}
