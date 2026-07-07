@@ -2,13 +2,12 @@
 import * as nacl from 'tweetnacl-ts'
 import { Buffer } from 'buffer'
 
-import * as allMgr from './store/allThingsConfigMgr'
 import * as utils from './utils'
 
-// this is unused by the server
+
 function getSampleKnotFreeTokenPayload(): KnotFreeTokenPayload {
   var res: KnotFreeTokenPayload = {
-    exp: 60*60*24*30, //`json:"exp,omitempty"` // ExpirationTimeunix seconds
+    exp: 60 * 60 * 24 * 30, //`json:"exp,omitempty"` // ExpirationTimeunix seconds
     iss: "xxx", //`json:"iss"`           // Issuer first 4 bytes (or more) of base64 public key of issuer
     jti: "xxx", //`json:"jti,omitempty"` // JWTID a unique serial number for this Issuer
 
@@ -18,7 +17,7 @@ function getSampleKnotFreeTokenPayload(): KnotFreeTokenPayload {
     su: 10,          //`json:"su"`  // Subscriptions seconds per sec
     co: 2,       //`json:"co"`  // Connections seconds per sec
 
-    URL: "unknown" //`json:"url"` // address of the service eg. "knotfree.net" or knotfree0.com for localhost
+    URL: "unknown" //`json:"url"` // address of the service eg. "knotfree.net" or knotfree.com for localhost
   }
   return res
 }
@@ -61,28 +60,30 @@ function getSampleKnotFreeTokenRequest(): TokenRequest {
 }
 
 
-export function getFreeToken(prefix: string, serverName: string, done: (ok: boolean, tok: string) => any) {
-   
+export function getFreeToken(prefix: string, serverName: string, done: (ok: boolean, tok: string) => any,
+  usersPublicKey: string, usersPrivateKey: string) {
+
   var hoststr = prefix + serverName + "api1/getToken"
 
   //console.log("it's fetch time again ... for a Token !!", hoststr)
   var data = getSampleKnotFreeTokenRequest()
   const myKeyPair: nacl.BoxKeyPair = nacl.box_keyPair()
-  let config = allMgr.GetGlobalConfig()
-  if (config.usersPublicKey !== undefined && config.usersPublicKey.length !== 0) {
-    myKeyPair.publicKey = utils.fromBase64Url(config.usersPublicKey)
-    myKeyPair.secretKey = utils.fromBase64Url(config.usersPrivateKey )
+ 
+  if (usersPublicKey && usersPublicKey.length !== 0) {
+    myKeyPair.publicKey = utils.fromBase64Url(usersPublicKey)
+    myKeyPair.secretKey = utils.fromBase64Url(usersPrivateKey)
   }
 
   // arg!! wants hex ! data.pkey =  base64url.encode(Buffer.from(keyPair.publicKey))
   data.pubk = utils.toBase64Url(Buffer.from(myKeyPair.publicKey))
   console.log("AppUtil getFreeToken ", hoststr, JSON.stringify(data))
-  const response = fetch(hoststr, { method: 'POST', body: JSON.stringify(data) }); // , { mode: "no-cors" });
+  const response = fetch(hoststr, { method: 'POST', body: JSON.stringify(data), mode:  'cors'  }); // , { mode: "no-cors" });
   response.then((resp: Response) => {
     console.log("have get free token response ", resp)
     if (resp.ok) {
-      resp.json().then((repl: TokenReply) => { // TokenReply
+      resp.json().then((anyrepl: any) => { // TokenReply
         // data is TokenReply 
+        const repl = anyrepl as TokenReply
         console.log("have get free token  fetch result ", repl)
         // box_open(box, nonce, theirPublicKey, mySecretKey)
         // nonce is in b64 and is just a string 

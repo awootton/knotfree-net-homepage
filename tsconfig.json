@@ -1,11 +1,15 @@
 {
   "compilerOptions": {
-    "target": "ES2016",
+    "ignoreDeprecations": "6.0",
+    "target": "es2015", //"es5",
     "lib": [
       "dom",
       "dom.iterable",
       "esnext"
     ],
+
+    "downlevelIteration": true, // atw
+
     "allowJs": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
@@ -21,6 +25,7 @@
     "jsx": "react-jsx"
   },
   "include": [
-    "src"
-, "src/.d.ts"  ]
+    "src",
+    "declarations.d.ts"
+  ]
 }

@@ -1,8 +1,8 @@
 
-import * as types from '../Types'
+
 import * as pipeline from '../Pipeline'
 import * as app from '../App'
-
+import * as pubtypes from '../publish-types'
 
 type adminhintMapItem = {
     adminhint: string;
@@ -28,7 +28,7 @@ export function subscribe(longName: string, uniqueid: string, cb: (h: string) =>
         found.map.set(uniqueid, cb)
         adminhintMap.set(key, found)
 
-        function gotAdminhintValue(reply: types.PublishReply) {
+        function gotAdminhintValue(reply: pubtypes.PublishReply) {
 
             var message: string = reply.message
             if (message !== undefined && !message.toLowerCase().includes("error")) {
@@ -41,8 +41,8 @@ export function subscribe(longName: string, uniqueid: string, cb: (h: string) =>
             }
         }
 
-        let request: types.PublishArgs = {
-            ...types.EmptyPublishArgs,
+        let request: pubtypes.PublishArgs = {
+            ...pubtypes.EmptyPublishArgs,
             longName: longName,
             cb: gotAdminhintValue,
             serverName: app.serverName,

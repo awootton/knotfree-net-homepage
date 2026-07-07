@@ -1,5 +1,5 @@
 
-import * as types from '../Types'
+import {types} from '../knotfree-ts-lib'
 import * as app from '../App'
 
 

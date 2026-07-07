@@ -10,10 +10,9 @@ import {
     Button,
     Box,
     IconButton,
-    Typography,
 } from '@mui/material';
 
-import { Close } from '@mui/icons-material/';
+import { Close } from '@mui/icons-material';
 
 import TextField from '@mui/material/TextField';
 
@@ -41,12 +40,12 @@ export const MyInputDialog: FC<Props> = (props: Props): ReactElement => {
         props.onConfirm(theTextTyped)
     }
     return (
-        <Dialog open={props.open} maxWidth="sm" fullWidth
+        (<Dialog open={props.open} maxWidth="sm" fullWidth
             onClose={props.onClose}
         >
             <DialogTitle>{props.title}</DialogTitle>
             <Box position="absolute" top={0} right={0}>
-                <IconButton onClick={props.onClose}>
+                <IconButton onClick={props.onClose} size="large">
                     <Close  />
                 </IconButton>
             </Box>
@@ -71,7 +70,7 @@ export const MyInputDialog: FC<Props> = (props: Props): ReactElement => {
                     Confirm
                 </Button>
             </DialogActions>
-        </Dialog>
+        </Dialog>)
     );
 };
 

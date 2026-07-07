@@ -1,8 +1,9 @@
 
-import * as types from '../Types'
+import * as types from '../knotfree-ts-lib/types'
 import * as pipeline from '../Pipeline'
 import * as app from '../App'
 import * as saved from '../SavedStuff'
+import * as pubtypes from '../publish-types'
 
 // This is really a token payload cache and not the actual token
 
@@ -30,7 +31,7 @@ export function subscribe(longName: string, uniqueid: string, config: saved.Thin
         found.map.set(uniqueid, cb)
         tokenMap.set(key, found)
 
-        function gottokenValue(reply: types.PublishReply) {
+        function gottokenValue(reply: pubtypes.PublishReply) {
 
             var message: string = reply.message
 
@@ -57,8 +58,8 @@ export function subscribe(longName: string, uniqueid: string, config: saved.Thin
             }
         }
 
-        let request: types.PublishArgs = {
-            ...types.EmptyPublishArgs,
+        let request: pubtypes.PublishArgs = {
+            ...pubtypes.EmptyPublishArgs,
             ...config,
             longName: longName,
             cb: gottokenValue,

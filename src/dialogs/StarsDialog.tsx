@@ -18,22 +18,24 @@ import Canvas from './Canvas'
 
 type Props = {
     open: boolean
-    onClose : () => any
+    onClose: () => any
     title: string
- //   body: string 
+    //   body: string 
     onConfirm: () => any
 }
 
-export const StarsDialog: FC<Props> = (props: Props): ReactElement => {
+export function StarsDialog(props: Props): ReactElement {
 
     return (
-        <Dialog open={props.open} maxWidth="sm" fullWidth
-        onClose={props.onClose}
-        >
-            {/* <DialogTitle>{props.title}</DialogTitle> */}
-            Hello world starz - Alan Wootton was here.
-            <Canvas/>
-        </Dialog>
+        <>
+            <Dialog open={props.open} maxWidth="sm" fullWidth
+                onClose={props.onClose}
+            >
+                {/* <DialogTitle>{props.title}</DialogTitle> */}
+                Hello world starz - Alan Wootton was here.
+                <Canvas />
+            </Dialog>
+        </>
     );
 };
 

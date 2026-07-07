@@ -1,0 +1,151 @@
+
+import assert from 'assert/strict'
+import * as  http from 'http'
+import fetch from 'node-fetch';
+
+// import test from 'node:test';
+
+// this file has been renamed to testHttp.txt because webpack keeps trying to build it.
+// change it back to testHttp.ts to run it with tsx:
+// npx tsx src/test/testHttp.ts 
+
+
+const sampleGet_ = `GET /docs/tutorials/linux/shellscripts/howto.html HTTP/1.1
+Host: Linode.com
+User-Agent: Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.1.8) Gecko/20091102 Firefox/3.5.5
+Accept: text/html,application/xhtml+xml,
+Accept-Language: en-us
+Accept-Encoding: gzip,deflate
+Accept-Charset: ISO-8859-1,utf-8
+Cache-Control: no-cache
+
+` // note the blank line at the end
+const samplePost_ = `POST /home/user/datafile HTTP/1.1
+From: user@linode33
+User-Agent: Mytools/0.8.0
+Content-Type: application/json
+Content-Length: 33
+
+{['Json-formatted','data pairs']}`
+// it's in hex so 11 is 17 bytes
+const sampleChunkedData_ = `POST /xx HTTP/1.1
+Content-Type: text/plain
+Transfer-Encoding: chunked
+
+7
+Mozilla
+11
+Developer Network
+0
+
+`
+const postData = `{[Json-formatted data pairs]}`
+
+console.log("postData.length", postData.length)
+
+const sampleGet = sampleGet_.split("\x0a").join("\r\n")
+const samplePost = samplePost_.split("\x0a").join("\r\n")
+const sampleChunkedData = sampleChunkedData_.split("\x0a").join("\r\n")
+
+console.log(Buffer.from(sampleGet).toString('hex'))
+console.log(Buffer.from(samplePost).toString('hex'))
+console.log(Buffer.from(sampleChunkedData).toString('hex'))
+var parts = sampleGet.split("\r\n")
+console.log(parts)
+
+parts = samplePost.split("\r\n")
+console.log(parts)
+
+{
+    const tmp = sampleGet
+    const index = tmp.indexOf("\r\n\r\n")
+    console.log(index)
+    const header = tmp.substring(0, index)
+    console.log(header)
+    const body = tmp.substring(index + 4)
+    console.log(body.length, body)
+}
+
+{
+    const tmp = samplePost + postData
+    const index = tmp.indexOf("\r\n\r\n")
+    console.log(index)
+    const header = tmp.substring(0, index)
+    console.log(header)
+    const body = tmp.substring(index + 4)
+    console.log(body.length, body)
+}
+
+console.log("---   ---   ---   ---   ---   ")
+console.log("---   ---   ---   ---   ---     ")
+console.log("part 2   ---   ---   ---   ---     ")
+
+
+const host = 'localhost';
+const port = 8765;
+
+var dataThatPostGot: Object = {}
+const theServerResponse: Object = ["My", "reply", "for", "every", "request"]
+const requestListener = function (req: http.IncomingMessage, res: http.ServerResponse) {
+    if (req.method === 'POST') {
+        console.log("http server had POST")
+        req.on('data', chunk => {
+            console.log("post chunk", chunk);
+            dataThatPostGot = JSON.parse(chunk);
+        });
+        req.on('end', () => {
+            console.log("http server requestListener end");
+        });
+    } else {
+        console.log("http server had GET")
+    }
+    res.writeHead(200);
+    res.end(JSON.stringify(theServerResponse));
+}
+const server = http.createServer(requestListener);
+server.listen(port, host, () => {
+    console.log(`Server is running on http://${host}:${port}`);
+})
+
+var gotData: Object = {}
+async function doATestGet() {
+    const response = await fetch('http://localhost:8765/some/path');
+    const data = await response.json();
+    console.log("doATestGet got", data);
+    gotData = data
+}
+
+async function xxx() {
+    await doATestGet()
+    assert.deepEqual(gotData, theServerResponse);
+}
+xxx()
+
+const postdata = {
+    "name": "victor",
+    "job": "writer"
+}
+async function doATestPost(postdata: Object) {
+    const response = await fetch('http://localhost:8765/some/path', {
+        method: 'post',
+        body: JSON.stringify(postdata),
+    });
+    const gotdata = await response.json();
+    console.log(gotdata);
+}
+
+async function xxx2() {
+    await doATestPost(postdata)
+    assert.deepEqual(dataThatPostGot, postdata)
+}
+xxx2()
+
+
+setTimeout(() => {
+
+    server.close()
+    server.closeAllConnections()
+    console.log("server closed")
+
+}, 1000)
+

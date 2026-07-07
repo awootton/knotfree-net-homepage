@@ -1,7 +1,6 @@
 import { Buffer } from 'buffer'
 
 import React, { FC, ReactElement, useEffect } from 'react';
-import './App.css';
 
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
@@ -23,9 +22,9 @@ import { NetStatus } from './NetStatus'
 import { Things } from './Things'
 import * as saved from './SavedStuff'
 
-import * as mqtt from "./MqttClient"
+// import * as mqtt from "./MqttClient"
 import * as more from "./MoreStuff"
-import * as utils from './utils'
+import * as utils from './knotfree-ts-lib/utils'
 
 import Toolbar from '@mui/material/Toolbar';
 import * as registry from './ChangeRegistry'
@@ -44,26 +43,27 @@ export let prefix = "https://"
 export let isDev = false
 export let forceLocalMode = false
 
+// these are where the things tab goes 
 export let subdomainHttpTarget = 'knotfree.net/'
 export let subdomainPrefix = 'http://'
 
 console.log("window.location.port", window.location.port)
 
-if (window.location.port === "3000") {
-  // is local dev moce 
-  serverName = "knotfree.com:8085"
-  isDev = true
-  prefix = "http://"
+// if (window.location.port === "3000") {
+//   // is local dev mode 
+//   serverName = "knotfree.com:8085"
+//   httpTarget = 'knotfree.com:8085'
+//   isDev = true
+//   prefix = "http://"
+//   subdomainHttpTarget = 'knotfree.com:8085/'
+//   // for debug against prod only:
+//   // serverName = "knotfree.net"
+//   // prefix = "https://"
 
-  // for debug against prod only:
-  // serverName = "knotfree.net"
-  // prefix = "https://"
-
-  // serverName = "knotfree.io"
-  // prefix = "http://"
-  // forceLocalMode = true
-
-}
+//   // serverName = "knotfree.io"
+//   // prefix = "http://"
+//   // forceLocalMode = true
+// }
 serverName = serverName + '/'
 // "knotfree.net" or localhost:3000/  knotfree.com is the same as localhost in my /etc/hosts file
 
@@ -72,19 +72,20 @@ export var useHttp = true // else if not mqtt use http
 
 console.log("Top of App Top of App Top of App Top of App Top of App Top of App v0.1.5 serverName:", prefix, serverName)
 
-if (!mqtt.StartMqtHappened && useMqtt) {
+// if (!mqtt.StartMqtHappened && useMqtt) {
 
-  setTimeout(() => {
-    console.log("Initial start of Mqtt Initial start of Mqtt Initial start of Mqtt Initial start of Mqtt ")
-    mqtt.StartMqt()
-  }, 10)
+//   setTimeout(() => {
+//     console.log("Initial start of Mqtt Initial start of Mqtt Initial start of Mqtt Initial start of Mqtt ")
+//     mqtt.StartMqt()
+//   }, 10)
 
-}
+// }
+
 // TODO: this is a mess that accumilated over time. Clean it up.
 if (serverName.includes('knotfree.io')) {
   httpTarget = 'knotfree.io'
   prefix = "http://"
-  subdomainHttpTarget = 'knotfree.io'
+  subdomainHttpTarget = 'knotfree.io/'
   subdomainPrefix = "http://"
   useHttp = false
 } else if (serverName.includes('knotfree.org')) {
@@ -93,11 +94,25 @@ if (serverName.includes('knotfree.io')) {
   useHttp = false
 } else if (serverName.includes('local')) {
   httpTarget = 'knotfree.com:8085' // is localhost in /etc/hosts
+  subdomainHttpTarget = 'knotfree.com:8085/'
+  subdomainPrefix = "http://"
 } else {// is knotfree.net
   httpTarget = 'knotfree.net'
   subdomainHttpTarget = 'knotfree.net/'
   subdomainPrefix = "https://"
 }
+
+if (window.location.port === "3000" || window.location.port === "3001"  || window.location.port === "3002" ) {
+  // is local dev mode 
+  subdomainHttpTarget = 'knotfree.com:8085/'
+  subdomainPrefix = "http://"
+
+  serverName = "knotfree.com:8085"
+  isDev = true
+  prefix = "http://"
+  httpTarget = 'knotfree.com:8085'
+}
+
 
 if (serverName.split(".").length === 4) {// is dotted quad
   httpTarget = serverName
@@ -105,10 +120,26 @@ if (serverName.split(".").length === 4) {// is dotted quad
   useHttp = false
 }
 
+if ( ! serverName.endsWith('/')) {
+  serverName = serverName + '/'
+}
+
+console.log("App serverName:", serverName)
+console.log("App httpTarget:", httpTarget)
+console.log("App prefix:", prefix)
+console.log("App subdomainHttpTarget:", subdomainHttpTarget)
+console.log("App subdomainPrefix:", subdomainPrefix)
+
+// eg https://raw.githubusercontent.com/awootton/knotfree-help-content/main/expiring.md
+// eg https://raw.githubusercontent.com/ is added by the server
 export let helpPrefix = prefix + serverName + "api1/rawgithubusercontentproxy/awootton/knotfree-help-content/main/"
 if (isDev) {
   helpPrefix = "http://localhost:4321/"
 }
+
+// we can also show the wiki? 
+// eg https://raw.githubusercontent.com/wiki/awootton/knotfreeiot/Mqtt5nano-device-commands..md
+export let wikiPrefix = prefix + serverName + "api1/rawgithubusercontentproxy/wiki/awootton/knotfreeiot/"
 
 
 utils.StartHeartbeatTimer();
@@ -117,10 +148,10 @@ function App(): ReactElement {
 
   return (
     // <div className="App">
-    <>
-      <VerticalTabs />
-    </>
     // </div>
+    (<>
+      <VerticalTabs />
+    </>)
   );
 }
 
@@ -134,7 +165,7 @@ function TabPanel(props: TabPanelProps) {
   const { children, value, index, ...other } = props;
 
   return (
-    <div
+    (<div
       className="panelTop"
       hidden={value !== index}
       id={`vertical-tabpanel-${index}`}
@@ -144,12 +175,12 @@ function TabPanel(props: TabPanelProps) {
       {value === index && (
         // <Box sx={{ p: 3 }}>
         // <Typography component={'span'} variant={'body2'} >{children}</Typography>
-        <div className='likeTypography'>
+        (<div className='likeTypography'>
           {children}
-        </div>
+        </div>)
         // </Box>
       )}
-    </div>
+    </div>)
   );
 }
 
@@ -170,20 +201,21 @@ export function VerticalTabs() {
 
   // do we need this. no, it's evil ? because I didn't fix it
   // note the numbers though.
-  // if (window.location.pathname === '/token') {
-  //   starting = 1
-  // }
-  // if (window.location.pathname === '/things') {
-  //   starting = 2
-  // }
-  // // if (window.location.pathname === '/names') {
-  // //   starting = 3
-  // // }
-  // if (window.location.pathname === '/misc') { // aka more
-  //   starting = 4
-  // }
+  if (window.location.pathname === '/token') {
+    starting = 1
+  }
+  if (window.location.pathname === '/things') {
+    starting = 2
+  }
+  if (window.location.pathname === '/names') {
+    starting = 3
+  }
+  if (window.location.pathname === '/misc') { // aka more
+    starting = 4
+  }
 
   const [value, setValue] = React.useState(starting);
+  const [uniqueId, setUniqueId] = React.useState(utils.randomString(24));
 
   useEffect(() => {
     registry.SetSubscripton("VerticalTabs", (name: string, arg: any) => {
@@ -304,7 +336,12 @@ export function VerticalTabs() {
 
       <TabPanel value={value} index={2}>
 
-        <Things />
+        <Things 
+          uniqueid={uniqueId}
+          refresh={() => { 
+            setUniqueId(utils.randomString(24))
+          }}
+        />
 
       </TabPanel>
 
@@ -328,12 +365,13 @@ export function VerticalTabs() {
     setMobileOpen(!mobileOpen);
   };
 
-  function getHelpUrl(): [string, string] {
+  function getHelpUrl(): [string, string, string] {
 
     // eg http://localhost:8085/api1/rawgithubusercontentproxy/awootton/knotfree-net-homepage/main/README.md
 
-    var path = ""
-    var title = ""
+    let path = ""
+    let title = ""
+    let prefix = helpPrefix
     if (value === 0) { // about knotfree
       path = "homepage.md"
       title = "Homepage help"
@@ -346,18 +384,23 @@ export function VerticalTabs() {
     if (value === 2) { // Things
       path = "things.md"
       title = "Things console help"
+
+      path = "How-to-use-the-'Things'-tab-in-the-knotfree-web-app..md"
+      prefix = wikiPrefix
     }
 
     if (value === 3) { // Names
-      path = "names.md"
+      // path = "names.md"
       title = "Names console help"
+      path = "Using-the-Names-tab-at-knotfree.md"
+      prefix = wikiPrefix
     }
 
     if (value === 4) { // misc
       path = "misc.md"
       title = "Miscellaneous explanations"
     }
-    return [title, path]
+    return [title, path, prefix]
   }
 
   const [isHelp, setIsHelp] = React.useState(false)
@@ -370,10 +413,10 @@ export function VerticalTabs() {
 
   const container = window !== undefined ? () => window.document.body : undefined;
 
-  const [helpTitle, helpPath] = getHelpUrl()
+  const [helpTitle, helpPath, prefix] = getHelpUrl()
 
   return (
-    <div className='surroundingDiv'>
+    (<div className='surroundingDiv'>
       <Box className='surroundingBox' sx={{ display: 'flex' }}>
 
         {/* <CssBaseline /> */}
@@ -391,7 +434,7 @@ export function VerticalTabs() {
               edge="start"
               onClick={handleDrawerToggle}
               sx={{ mr: 2, display: { sm: 'none' } }}
-            >
+              size="large">
               <MenuIcon />
             </IconButton>
 
@@ -446,22 +489,18 @@ export function VerticalTabs() {
           {panels}
         </Box>
       </Box>
-
       <MarkdownDialog
         open={isHelp}
         onClose={() => setIsHelp(false)}
-        urlprefix={helpPrefix}
+        urlprefix={prefix}
         path={helpPath}
         title={helpTitle}
       />
-
-{/* <div className="tab-tooltip-content">
+      {/* <div className="tab-tooltip-content">
             One time security and access token setup.
           </div> */}
-
-
-    </div>
-  )
+    </div>)
+  );
 
   // http://localhost:8085/api1/rawgithubusercontentproxy/awootton/knotfree-net-homepage/main/README.md
   // https://knotfree.net/api1/rawgithubusercontentproxy/awootton/knotfree-net-homepage/main/README.md

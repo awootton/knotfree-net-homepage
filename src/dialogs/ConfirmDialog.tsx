@@ -10,10 +10,9 @@ import {
     Button,
     Box,
     IconButton,
-    Typography,
 } from '@mui/material';
 
-import { Close } from '@mui/icons-material/';
+import { Close } from '@mui/icons-material';
 
 type Props = {
     open: boolean
@@ -26,18 +25,21 @@ type Props = {
 export const ConfirmDialog: FC<Props> = (props: Props): ReactElement => {
 
     return (
-        <Dialog open={props.open} maxWidth="sm" fullWidth
+        (<Dialog open={props.open} maxWidth="sm" fullWidth
         onClose={props.onClose}
+        className = "likeTypography"
         >
             <DialogTitle>{props.title}</DialogTitle>
             <Box position="absolute" top={0} right={0}>
-                <IconButton onClick={props.onClose}>
+                <IconButton onClick={props.onClose} size="large">
                     <Close />
                 </IconButton>
             </Box>
             <DialogContent>
             {/* <Typography>{props.body}</Typography> */}
-            <div className = "likeTypography">{props.body}</div>
+            <div className = "likeTypography">
+                {props.body}
+            </div>
             </DialogContent>
             <DialogActions>
                 <Button color="primary" variant="contained" onClick={props.onClose}>
@@ -47,7 +49,7 @@ export const ConfirmDialog: FC<Props> = (props: Props): ReactElement => {
                     Confirm
                 </Button>
             </DialogActions>
-        </Dialog>
+        </Dialog>)
     );
 };
 

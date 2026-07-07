@@ -8,5 +8,6 @@ yarn build
 
 rsync -a ./build/ ../knotfreeiot/docs/   
 
+# this would be better but it is not working .
 aws s3 cp ./build s3://gotoherestatic/knotfree.net/ --recursive
 

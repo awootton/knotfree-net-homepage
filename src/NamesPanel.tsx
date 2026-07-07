@@ -3,10 +3,10 @@ import React, { FC, ReactElement, useEffect } from 'react'
 import useFetch from "react-fetch-hook";
 
 
-import * as types from './Types'
+import * as types from './knotfree-ts-lib/types'
 import * as saved from './SavedStuff'
 
-import * as utils from './utils'
+import * as utils from './knotfree-ts-lib/utils'
 
 import { NameCard } from './NameCard'
 
@@ -14,7 +14,6 @@ import * as name from './NameCard';
 
 import TextField from '@mui/material/TextField';
 
-import './NamesPanel.css'
 import * as allMgr from './store/allThingsConfigMgr'
 
 import * as namesListCache from './store/namesListCache'
@@ -64,15 +63,25 @@ export const NamesPanel: FC<Props> = (props: Props): ReactElement => {
         nameType: 'plain'
     }
 
-    var foundtoken = saved.getToken()
-    if (foundtoken === undefined) {
+    let setupError = ''
+
+    let foundtoken = saved.getToken()
+    if (allMgr.GetGlobalConfig().usersPublicKey === '') {
+        setupError = 'You have owners public key. See the Token panel.'
+    } else if (foundtoken === undefined) {
         console.log('NamesPanel no token')
+        setupError = 'A token with a owners public key is required to own names.'
     } else {
         let [payload, error] = utils.GetPayloadFromToken(foundtoken)
         if (error !== '') {
             console.log('NamesPanel error', error)
+            setupError = '>Error decoding token.'
         } else {
             defaultState.theTokenPayload = payload
+            if ( payload.pubk === undefined || payload.pubk === ''  ) {
+                console.log('NamesPanel no su')
+                setupError = 'You have no owners key in your token. See the Token panel.' 
+            }
         }
     }
 
@@ -85,47 +94,11 @@ export const NamesPanel: FC<Props> = (props: Props): ReactElement => {
 
     const [errorMessage, setErrorMessage] = React.useState('');
 
-    // function gotStatusCallback(status: types.NameStatusType, err: string) {
-
-    //     console.log('NamesPanel got status', status, err)
-    //     if (err !== '') {
-    //         // try again in 5 seconds until we get one 
-    //         const newState = {
-    //             ...state,
-    //             // refreshCount: state.refreshCount + 1,
-    //             names: [],
-    //         }
-    //         setTimeout(() => { setState(newState) }, 5000)
-    //     }
-    //     const newState = {
-    //         ...state,
-    //         status: status,
-    //     }
-    //     setState(newState)
-    // }
-
-    // useEffect(() => {
-
-    //     console.log('statusOrdered useEffect')
-    //     const iname = types.getInternalName(state.aName, state.nameType)
-
-    //     // if (state.aName.length > 7 && !statusOrdered) {
-    //     //     console.log('NamesPanel get status', types.getInternalName(state.aName, state.nameType))
-    //     //     namesStatusCache.subscribe(iname, state.uniqueid, gotStatusCallback)
-    //     //     setStatusOrdered(true)
-    //     // } else {
-    //     //     namesStatusCache.replaceCallback(iname, state.uniqueid, gotStatusCallback)
-    //     // }
-
-    //     return () => {
-    //         console.log('statusOrdered unsubscribe')
-    //         // it's unsubscribe before the answer gets back! 
-    //         // I don't get it 
-    //         // namesStatusCache.unsubscribe(types.getInternalName(state.aName, state.nameType), state.uniqueid)
-    //     }
-    // }, [statusOrdered, state])
-
     useEffect(() => {
+
+        if (setupError !== '' ){
+            return
+        }
 
         // TODO: move this to it's own comkpoenent like with the status
 
@@ -168,8 +141,15 @@ export const NamesPanel: FC<Props> = (props: Props): ReactElement => {
         return () => {
             // this seems broken namesListCache.unsubscribe(ownerPubk, state.uniqueid)
         }
-    }, [namesOrdered, state])
+    }, [namesOrdered, state,setupError])
 
+    if ( setupError !== '' ) {
+        return (
+            <>
+                <p>Error: {setupError}</p>
+            </>
+        )
+    }
 
     function nameChanged(e: React.ChangeEvent<HTMLInputElement>) {
         let str = e.currentTarget.value
@@ -403,7 +383,7 @@ export const NamesPanel: FC<Props> = (props: Props): ReactElement => {
         const nbuffer = Buffer.from(nonce)
         var enc = Buffer.from("BoxItItUp failed")
         try {
-            enc = utils.BoxItItUp(bmessage, nbuffer, theirPubk, ourAdminPrivk)
+            enc = utils.BoxItItUp(bmessage, nbuffer, theirPubk, ourAdminPrivk) as Buffer<ArrayBuffer>
         } catch (e) {
             console.log("BoxItItUp failed", e)
             setErrorMessage("had BoxItItUp failed" + e)
@@ -454,6 +434,8 @@ export const NamesPanel: FC<Props> = (props: Props): ReactElement => {
         })
     }
 }
+
+// TODO: move to lib and jopin with local-hoster
 
 export interface NameStatusProps {
     aName: string,

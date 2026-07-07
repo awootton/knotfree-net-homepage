@@ -1,4 +1,4 @@
-
+import { Buffer } from 'buffer'
 import React, { FC, ReactElement, useEffect } from 'react'
 
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
@@ -10,11 +10,10 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 
 import { Tooltip } from 'react-tooltip'
 
-import './NameCard.css'
+import * as utils from './knotfree-ts-lib/utils'
 
-import * as utils from './utils'
-
-import * as types from './Types';
+// import * as types from './Types';
+import * as types from './knotfree-ts-lib/types'
 import * as app from './App'
 
 import * as allMgr from './store/allThingsConfigMgr'
@@ -94,7 +93,10 @@ export const NameCard: FC<Props> = (props: Props): ReactElement => {
 
     let aName = names[index].namestr
     let nameType = 'plain'
-    let nameParts = aName.split('_')
+    let nameParts: string[] = []
+    if (aName) { // name might be undefined or null or bogus or disco. Better check.
+        nameParts = aName.split('_')
+    }
     if (nameParts.length > 1) {
         aName = nameParts[0]
         nameType = "." + nameParts[1]
@@ -208,7 +210,7 @@ export const NameCard: FC<Props> = (props: Props): ReactElement => {
         const nbuffer = Buffer.from(nonce)
         var enc = Buffer.from("BoxItItUp failed")
         try {
-            enc = utils.BoxItItUp(bmessage, nbuffer, theirPubk, ourAdminPrivk)
+            enc = utils.BoxItItUp(bmessage, nbuffer, theirPubk, ourAdminPrivk) as Buffer<ArrayBuffer>
         } catch (e) {
             console.log("replace options BoxItItUp failed", e)
             setDeleteConfirm(false)
@@ -409,22 +411,16 @@ export const NameCard: FC<Props> = (props: Props): ReactElement => {
 
     return (
         // <Card variant="outlined" className='nameCard' key={index}>
-        <div className='nameCard' key={index} >
-
+        (<div className='nameCard' key={index} >
             {/* <div className='offline' >{offline}</div>
             <div className='expires' >{expires}</div> */}
-
             <div className='cardRow1' >
 
                 {getName()}
 
             </div>
-
             {makeDetails()}
-
             {makeOpenButton()}
-
-
             <ConfirmDialog
                 open={isDeleteConfirm}
                 onClose={() => setDeleteConfirm(false)}
@@ -432,7 +428,6 @@ export const NameCard: FC<Props> = (props: Props): ReactElement => {
                 title={"Delete this name? " + getName()}
                 body='If you confirm then this name will no longer be owned by you and will be available for anyone to claim.'
             />
-
             <MyInputDialog
                 open={addTypeDialog}
                 onClose={() => { setAddTypeDialog(false) }} //
@@ -442,7 +437,6 @@ export const NameCard: FC<Props> = (props: Props): ReactElement => {
                 label='add  here'
                 default=''
             />
-
             <ConfirmDialog
                 open={errorMessage !== ''}
                 onClose={() => setErrorMessage('')}
@@ -453,7 +447,6 @@ export const NameCard: FC<Props> = (props: Props): ReactElement => {
                 title={"Had an error"}
                 body={errorMessage}
             />
-
             {/* if the key is set then this is just the add row dialog for that key. If the subkey is also set then it's 'edit' */}
             <MyDualInputDialog
                 open={addKvDialog.key !== ''}
@@ -466,7 +459,6 @@ export const NameCard: FC<Props> = (props: Props): ReactElement => {
                 default={addKvDialog.subkey!==''?addKvDialog.subkey:''}
                 default2={addKvDialog.subkey!==''?''+state.optMap.get(addKvDialog.key)?.get(addKvDialog.subkey):''}
             />
-
             <ConfirmDialog
                 open={deleteKeyPairDialog.key !== ''}
                 onClose={() => setDeleteKeyPairDialog({ key: '', subkey: '' })}
@@ -489,11 +481,8 @@ export const NameCard: FC<Props> = (props: Props): ReactElement => {
                 title={"Delete this?"}
                 body={"Confirm you want to delete the '" + deleteKeyPairDialog.subkey + "' row in '" + deleteKeyPairDialog.key + "'."}
             />
-
-
-
-        </div>
-    )
+        </div>)
+    );
 
     function addKvPair(key: string, val: string) {
         // adding a kv value to a type
@@ -563,7 +552,7 @@ export const NameCard: FC<Props> = (props: Props): ReactElement => {
         const nbuffer = Buffer.from(nonce)
         var enc = Buffer.from("BoxItItUp failed")
         try {
-            enc = utils.BoxItItUp(bmessage, nbuffer, theirPubk, ourAdminPrivk)
+            enc = utils.BoxItItUp(bmessage, nbuffer, theirPubk, ourAdminPrivk) as Buffer<ArrayBuffer>
         } catch (e) {
             console.log("delete BoxItItUp failed", e)
             setDeleteConfirm(false)

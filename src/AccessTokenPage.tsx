@@ -7,37 +7,38 @@ import FormGroup from '@mui/material/FormGroup';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import * as pipeline from './Pipeline';
 
-// import './homepage.css'
-import './AccessTokenPage.css'
+import './homepage.css'
 
-import * as util from './AccessTokenPageUtil'
+import { getFreeToken } from './knotfree-ts-lib'
 
 import { CopyToClipboard } from 'react-copy-to-clipboard'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 
-import Dialog from '@material-ui/core/Dialog';
+import Dialog from '@mui/material/Dialog';
 import TextField from '@mui/material/TextField';
 
 import * as app from './App'
 
 import * as saved from './SavedStuff'
 import * as helpers from './Utils-tsx'
-import * as utils from './utils'
+import * as utils from './knotfree-ts-lib/utils'
 
 import * as registry from './ChangeRegistry'
-import * as types from './Types'
+import * as types from './knotfree-ts-lib/types'
+import * as pubtypes from './publish-types'
 
 import * as allMgr from './store/allThingsConfigMgr'
 import * as tokenCache from './store/tokenCache'
 import { Tooltip } from 'react-tooltip'
-
+import MyInputDialog from './dialogs/MyInputDialog';
+import { SpaOutlined } from '@mui/icons-material';
 
 type State = {
 
     theToken: string
     // hasToken: boolean
     //  adding: boolean
-    isPasteOwnedTokenDialog: boolean
+    // isPasteOwnedTokenDialog: boolean
 
     userPublicKey: string // this is the users public key for the token
     isPasteUserPublicKey: boolean
@@ -48,7 +49,7 @@ var defaultState: State = {
     theToken: '',
     //   hasToken: false,
     //  adding: false,
-    isPasteOwnedTokenDialog: false,
+    // isPasteOwnedTokenDialog: false,
     userPublicKey: '',
     isPasteUserPublicKey: false,
 
@@ -127,6 +128,8 @@ export const AccessTokenPage: FC<Props> = (props: Props): ReactElement => {
 
     const [things, setThings] = React.useState(CollectThingList())
 
+    const [isPasteOwnedTokenDialog, setIsPasteOwnedTokenDialog] = React.useState(false)
+
     const registryNameTokenStats = 'registryNameTokenStatesYCDmkjgCLM'
 
     const gotUsageStats = (name: string, arg: any) => {
@@ -162,9 +165,9 @@ export const AccessTokenPage: FC<Props> = (props: Props): ReactElement => {
 
     function getTokenFromServer() {
         console.log("getting token from server")
-
+        let config = allMgr.GetGlobalConfig()
         console.log("serverName", app.prefix, app.serverName)
-        util.getFreeToken(app.prefix, app.serverName, (ok: boolean, tok: string) => {
+        getFreeToken(app.prefix, app.serverName, (ok: boolean, tok: string) => {
             console.log("got a token", tok, ok)
             const newState: State = {
                 ...state,
@@ -172,7 +175,7 @@ export const AccessTokenPage: FC<Props> = (props: Props): ReactElement => {
             }
             saved.setToken(tok)
             setState(newState)
-        })
+        }, config.usersPublicKey, config.usersPrivateKey)
     }
     function clearLocalToken() {
         console.log("clear token")
@@ -186,30 +189,21 @@ export const AccessTokenPage: FC<Props> = (props: Props): ReactElement => {
 
     function addExistingToken() {
         console.log("addExistingToken")
-        potDialogTempValue = state.theToken
-        const newState: State = {
-            ...state,
-            isPasteOwnedTokenDialog: true
-        }
-        setState(newState)
+        setIsPasteOwnedTokenDialog(true)
     }
 
-    var potDialogTempValue = ""
-    function handleDialogClose() {
-        console.log("dialog handleDialogClose")
-        if (potDialogTempValue !== "") {
+    function handlePasteTokenDialogClose(newToken: string) {
+        console.log("paste token handlePasteTokDialogClose")
+        if (newToken !== "") {
             const newState: State = {
                 ...state,
-                isPasteOwnedTokenDialog: false,
-                theToken: potDialogTempValue
+                theToken: newToken
             }
             setState(newState)
+            saved.setToken(newToken)
+            setIsPasteOwnedTokenDialog(false)
         } else {
-            const newState: State = {
-                ...state,
-                isPasteOwnedTokenDialog: false,
-            }
-            setState(newState)
+            setIsPasteOwnedTokenDialog(false)
         }
     }
 
@@ -314,12 +308,12 @@ export const AccessTokenPage: FC<Props> = (props: Props): ReactElement => {
         token: string
     }
     // TODO: use MyInputDialog instead. This is crap.
-    const PasteOwnedTokenDialog = (params: PotParams): ReactElement => {
+    const XXXXXPasteOwnedTokenDialog = (params: PotParams): ReactElement => {
 
         function tokenChanged(e: React.ChangeEvent<HTMLInputElement>) {
             console.log("ownedTokenChanged", e.currentTarget.value)
             const tok = e.currentTarget.value
-            potDialogTempValue = tok
+            //    potDialogTempValue = tok
         }
 
         return (
@@ -347,28 +341,83 @@ export const AccessTokenPage: FC<Props> = (props: Props): ReactElement => {
 
     const EnterPassphraseDialog = (params: PassphraseParams): ReactElement => {
 
+        const [currentPhrase, setCurrentPhrase] = React.useState(params.phrase);
+
         function valueChanged(e: React.ChangeEvent<HTMLInputElement>) {
             console.log("passphrase changed", e.currentTarget.value)
             const tmp = e.currentTarget.value
             passphraseDialogTempValue = tmp
+            setCurrentPhrase(tmp)
+        }
+        function comment(): ReactElement {
+            if (currentPhrase === undefined || currentPhrase === "" || currentPhrase.length < 20) {
+                return (
+                    <span>
+                        That's a short, hackable passphrase.
+                    </span>
+                )
+            }
+            return (
+                <>
+                    <span>
+                        Before you click OK, make sure you have saved this passphrase in a safe place. <br />
+                        Put it in a text file. Text it to your mother. What would you do with a bitcoin key to $1,000,000?
+                    </span>
+                </>
+            )
+        }
+
+        function generatePassphrase() {
+            // is this right? the url stuff is a tangle
+            let url = app.prefix + app.serverName + "api1/getGiantPassword"
+            console.log('getPassword url', url)
+
+            fetch(url, { method: "GET" })
+                .then(response => response.text())
+                .then(data => {
+                    var str = '' + data
+                    console.log('getPassword:' + str)
+                    setCurrentPhrase(str)
+                })
+                .catch(error => console.error(error));
         }
 
         return (
-
-            < div style={{ width: "75%", height: "75%", padding: 24 }} >
-                <div style={{ width: "75%", height: "75%", padding: 12 }} >
-
+            < div style={{ width: "95%", height: "75%", padding: 24 }} >
+                <div style={{ width: "95%", height: "75%", padding: 12 }} >
                     <TextField
+                        fullWidth // of what? the dialog? the page? the world?
+
+                        multiline
+                        rows={3}
+                        style={{ width: "95%", height: "100%", padding: 12 }}
+
                         onChange={valueChanged}
                         // id="outlined-helperText"
                         label="Add passphrase here"
-                        defaultValue={params.phrase}
-                        helperText="Type a passphrase here. Be sure to also save it somewhere safe."
+                        value={currentPhrase}
+                        helperText="Type a passphrase here. If it's not at least 20 characters long it will be hackable. You should save it in a safe place and just paste it here. I recommend lastpass"
                     />
                 </div>
-                <Button color="secondary" variant="contained" onClick={params.onConfirm}>
+                <Button color="secondary" variant="contained" onClick={params.onConfirm}
+                    style={{ margin: 12 }}>
                     OK
                 </Button>
+                {comment()}
+                <Button color="secondary" variant="contained" onClick={params.onConfirm}
+                    style={{ margin: 12 }}>
+                    Cancel
+                </Button>
+                <div style={{ margin: 12 }}>
+                    <span>
+                        Would you like me to generate a big phat passphrase for you? <br></br>
+                        <Button color="secondary" variant="contained" onClick={generatePassphrase}
+                            style={{ margin: 12 }}>
+                            Yes. Let's take a look at some passphrase ideas.
+                        </Button>
+                    </span>
+                </div>
+
             </div >
         )
     }
@@ -416,8 +465,8 @@ export const AccessTokenPage: FC<Props> = (props: Props): ReactElement => {
             // const index = i;
             const thing = things[i]
             if (checked) {
-                let request: types.PublishArgs = {
-                    ...types.EmptyPublishArgs,
+                let request: pubtypes.PublishArgs = {
+                    ...pubtypes.EmptyPublishArgs,
                     ...thing.config,
                     longName: thing.config.longName,
                     cb: () => console.log("set token callback"),
@@ -465,7 +514,7 @@ export const AccessTokenPage: FC<Props> = (props: Props): ReactElement => {
         // console.log("getSetTokenMessage", state.theToken.length)
         if (state.theToken.length > 0) {
             return (<>
-                <Button variant="outlined" className='myButtons' onClick={setTokens} >Set token on all devices below:</Button>
+                <Button variant="outlined" className='myButtons' onClick={setTokens} >Set token on all devices below (is broken):</Button>
 
                 <FormGroup>
                     {thingsElementList}
@@ -495,14 +544,34 @@ export const AccessTokenPage: FC<Props> = (props: Props): ReactElement => {
     }
 
     const getOwnerPass = (): ReactElement => {
+
+        // function comment(): ReactElement {
+        //     if (currentPhrase === undefined || currentPhrase === "" ) {
+        //         return (
+        //             <span>
+        //                 Would you like us to generate a legit passphrase?
+        //             </span>
+        //         )
+        //     }
+        //     return (
+        //         <>
+        //         </>
+        //     )
+        //}
+
+
         if (state.userPublicKey !== undefined && state.userPublicKey !== "") {
 
             return (
                 <span>
                     Owner passphrase is set. {copyPubkButton()} <br></br>
-                    This is your owners public key: {state.userPublicKey}<br></br>
                     <Button variant="outlined" className='myButtons' onClick={addPassphrase}
-                    >Change</Button><br></br>
+                    >You may change or set passphrase.
+                    </Button><br></br>
+
+                    This is your owners public key: {state.userPublicKey}<br></br>
+
+
                 </span>
             )
 
@@ -520,12 +589,22 @@ export const AccessTokenPage: FC<Props> = (props: Props): ReactElement => {
 
     return (
         <span className="tokenMainDiv">
-            <Dialog
+
+            <MyInputDialog
+                open={isPasteOwnedTokenDialog}
+                onClose={() => setIsPasteOwnedTokenDialog(false)}
+                title="Paste token here"
+                body="Paste another token here and we will use that one. Note that everything is stored locally."
+                default={state.theToken}
+                onConfirm={handlePasteTokenDialogClose}
+                label="Paste token here"
+            />
+            {/* <Dialog
                 open={state.isPasteOwnedTokenDialog}
-                onClose={handleDialogClose}
+                onClose={handlePasteTokeDialogClose}
             >
                 <PasteOwnedTokenDialog token={state.theToken} />
-            </Dialog>
+            </Dialog> */}
 
             <Dialog
                 open={state.isPasteUserPublicKey}

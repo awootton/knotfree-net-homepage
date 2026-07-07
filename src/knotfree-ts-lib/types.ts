@@ -1,8 +1,55 @@
 
-import * as saved from './SavedStuff'
+// for the hosters
+export type ServerConfigItem = {
+    name: string,
+    // in binary. 24 high bits of the sha256 of the name. Must match what knotfree does.
+    // hashedName: Buffer,
 
-export type RequestCallbackType = (arg0: PublishReply) => void
-export const EmptyRequestCallbackType: RequestCallbackType = (arg0: PublishReply) => { }
+    port: number, // for forwarding http
+    // directory: string, // where the data lives ??
+    // passphrase?: string[], // for encrypting an api we don't have yet
+    // admin?: string[], // for encrypting an and api we don't have yet
+    host?: string // when it's not localhost
+}
+
+export const EmptyServerConfigItem: ServerConfigItem = {
+    name: "",
+    // hashedName: Buffer.from(""),
+    // nameReservationToken: "",
+    port: 0, // for forwarding http
+    // directory: "", // where the data lives
+    // passphrase: [],
+    host: "localhost"
+}
+
+
+export type ServerConfigList = {
+    token: string // for accessing knotfree,
+    ownerPublicKey: string
+    ownerPrivateKey: string
+    items: ServerConfigItem[]
+}
+
+export var EmptyServerConfigList: ServerConfigList = {
+    token: "default-config-token-needs-replacing",
+    ownerPublicKey: "",
+    ownerPrivateKey: "",
+    items: []
+}
+
+export var serverConfigList: ServerConfigList = EmptyServerConfigList
+
+export function GetName2Config(name: string): ServerConfigItem {
+    for (let item of serverConfigList.items) {
+        if (item.name === name) {
+            return item
+        }
+    }
+    return EmptyServerConfigItem
+}
+
+// export type RequestCallbackType = (arg0: PublishReply) => void
+// export const EmptyRequestCallbackType: RequestCallbackType = (arg0: PublishReply) => { }
 
 // Example of a WatchedTopic from Go
 // { 
@@ -91,76 +138,76 @@ export function getExternalName(aName: string, nameType: string): string {
 }
 
 export let knotfreeApiPublicKey = ""
-export function SetKnotfreeApiPublicKey( k : string) {
+export function SetKnotfreeApiPublicKey(k: string) {
     knotfreeApiPublicKey = k
 }
 
-export interface PublishArgs extends saved.ThingConfig {
+// export interface PublishArgs extends saved.ThingConfig {
 
-    cb: RequestCallbackType
-    serverName: string // knotfree.net or knotfree.com (when local)
+//     cb: RequestCallbackType
+//     serverName: string // knotfree.net or knotfree.com (when local)
 
-    //  longName: string
-    // shortName: string
+//     //  longName: string
+//     // shortName: string
 
-    // command: string
-    //  description: string
+//     // command: string
+//     //  description: string
 
-    args: string[]
-    // these are 32 bytes each
+//     args: string[]
+//     // these are 32 bytes each
 
-    // if they are empty then we will not encrypt.
-    // thingPubk: Uint8Array
+//     // if they are empty then we will not encrypt.
+//     // thingPubk: Uint8Array
 
-    //  adminPrivk: Uint8Array // we're the admin
-    // adminPubk: Uint8Array
+//     //  adminPrivk: Uint8Array // we're the admin
+//     // adminPubk: Uint8Array
 
-    needsEncrypt: boolean
+//     needsEncrypt: boolean
 
-    nonce: string
-    isHttps: boolean // knotfree.net and knotfree.io
-    isHttp: boolean // local mode
-    isMqtt: boolean
+//     nonce: string
+//     isHttps: boolean // knotfree.net and knotfree.io
+//     isHttp: boolean // local mode
+//     isMqtt: boolean
 
-    when: number
+//     when: number
 
-    path: string // eg /get/banner?nonce=1234 or /=isd7DFJdec?nonce=1234 if encrypted
-    userArgs: Map<string, string>
+//     path: string // eg /get/banner?nonce=1234 or /=isd7DFJdec?nonce=1234 if encrypted
+//     userArgs: Map<string, string>
 
-}
+// }
 
-export interface PublishReply extends PublishArgs {
-    message: string
-    error: string
-}
+// export interface PublishReply extends PublishArgs {
+//     message: string
+//     error: string
+// }
 
-export const EmptyPublishArgs: PublishArgs = {
+// export const EmptyPublishArgs: PublishArgs = {
 
-    cb: EmptyRequestCallbackType,
-    serverName: 'knotfree.net',
-    longName: '',
-    shortName: '',
-    commandString: '',
-    cmdDescription: '',
-    stars: 0,
+//     cb: EmptyRequestCallbackType,
+//     serverName: 'knotfree.net',
+//     longName: '',
+//     shortName: '',
+//     commandString: '',
+//     cmdDescription: '',
+//     stars: 0,
 
-    cmdArgCount: 0,
-    args: [],
-    userArgs: new Map<string, string>(),
+//     cmdArgCount: 0,
+//     args: [],
+//     userArgs: new Map<string, string>(),
 
-    thingPublicKey: '',
-    adminPrivateKey: '',
-    adminPublicKey: '',
-    needsEncrypt: true,
+//     thingPublicKey: '',
+//     adminPrivateKey: '',
+//     adminPublicKey: '',
+//     needsEncrypt: true,
 
-    nonce: '',
-    isHttps: true,
-    isHttp: false,// local mode
-    isMqtt: false,
+//     nonce: '',
+//     isHttps: true,
+//     isHttp: false,// local mode
+//     isMqtt: false,
 
-    when: 0,
-    path: '',
-}
+//     when: 0,
+//     path: '',
+// }
 
 // LooseObject is for when we can't help cheating.
 export interface LooseObject { // decend mqtt user props from this 
@@ -285,3 +332,17 @@ export const EmptyClusterStats: ClusterStats = {
 
 
 
+// Copyright 2026 Alan Tracey Wootton
+// See LICENSE
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.

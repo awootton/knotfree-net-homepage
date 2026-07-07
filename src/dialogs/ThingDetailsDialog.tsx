@@ -16,7 +16,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import MenuItem from '@mui/material/MenuItem';
 import Menu from '@mui/material/Menu';
 
-import { Close } from '@mui/icons-material/';
+import { Close } from '@mui/icons-material';
 
 import TextField from '@mui/material/TextField';
 
@@ -24,15 +24,15 @@ import * as saved from '../SavedStuff';
 import * as pipeline from '../Pipeline';
 import * as app from '../App';
 import * as utilsTsx from '../Utils-tsx';
-import * as utils from '../utils';
-import * as types from '../Types';
+import * as utils from '../knotfree-ts-lib/utils'
+import * as types from '../knotfree-ts-lib/types'
 import * as helpCache from '../store/helpCache'
 import * as tokenCache from '../store/tokenCache'
 import * as adminhintCache from '../store/adminhintCache'
 import * as shortnameCache from '../store/shortnameCache'
 import * as pubkCache from '../store/pubkCache'
 import * as helpers from '../Utils-tsx'
-
+import * as pubtypes from '../publish-types'
 
 import * as configMgr from '../store/thingConfigMgr'
 //import * as allMgr from '../store/allThingsConfigMgr'
@@ -87,7 +87,7 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
 
     const index = props.index
 
-    const gotReturnValue = (reply: types.PublishReply) => {
+    const gotReturnValue = (reply: pubtypes.PublishReply) => {
 
         // let options: types.LooseObject = arg
 
@@ -175,8 +175,8 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
                 }
             }
 
-            let request: types.PublishArgs = {
-                ...types.EmptyPublishArgs,
+            let request: pubtypes.PublishArgs = {
+                ...pubtypes.EmptyPublishArgs,
                 ...config,
                 cb: gotReturnValue,
                 serverName: app.serverName,
@@ -254,7 +254,8 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
     function thingNameChanged(e: React.ChangeEvent<HTMLInputElement>) {
         let str = e.currentTarget.value
         str = str.toLowerCase()
-        str = str.replace(/[^a-z0-9\-]/g, '')
+        // str = str.replace(/[^a-z0-9\-]/g, '')
+        str = str.replace(/[^a-z0-9-]/g, '')
         e.currentTarget.value = str
     }
 
@@ -563,12 +564,12 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
     let offline = adminhint.length > 0 ? '' : 'offline'
 
     return (
-        <Dialog open={props.open} maxWidth="sm" fullWidth
+        (<Dialog open={props.open} maxWidth="sm" fullWidth
             onClose={props.onClose}
         >
             <DialogTitle>{props.title}</DialogTitle>
             <Box position="absolute" top={0} right={0}>
-                <IconButton onClick={props.onClose}>
+                <IconButton onClick={props.onClose} size="large">
                     <Close />
                 </IconButton>
             </Box>
@@ -705,7 +706,6 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
                     Done
                 </Button>
             </DialogActions>
-
             <Menu
                 id="simple-menu"
                 anchorEl={selectUp}
@@ -716,7 +716,6 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
                 {menuitems}
 
             </Menu>
-
             <div className='tinyText'>
                 {help.length > 0 ? 'he ' : ' '}
                 {adminhint.length > 0 ? 'ah ' : ' '}
@@ -725,8 +724,7 @@ export const ThingDetailsDialog: FC<Props> = (props: Props): ReactElement => {
                 {config.shortName.length > 0 ? ' sn' : ''}
                 {tokeninfo.jti.length >0 ? ' to' : ''}
             </div>
-
-        </Dialog>
+        </Dialog>)
     );
 };
 

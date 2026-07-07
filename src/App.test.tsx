@@ -2,7 +2,7 @@
 // import { render, screen } from '@testing-library/react';
 // import App from './App';
 
-import * as thingcard from './ThingCard'
+// import * as thingcard from './ThingCard'
 import * as utilsTsx from './Utils-tsx'
 
 // to run: yarn test

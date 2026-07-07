@@ -10,10 +10,9 @@ import {
     Button,
     Box,
     IconButton,
-    Typography,
 } from '@mui/material';
 
-import { Close } from '@mui/icons-material/';
+import { Close } from '@mui/icons-material';
 
 import TextField from '@mui/material/TextField';
 
@@ -47,7 +46,7 @@ export const MyDualInputDialog: FC<Props> = (props: Props): ReactElement => {
 
     function textChanged2(e: React.ChangeEvent<HTMLInputElement>) {
         let str = e.currentTarget.value
-        str = str.replaceAll(' ', '')
+        str = str.replaceAll(' ', '') // because we parse by spaces, we can't allow spaces in the input
         theTextTyped2 = str
         e.currentTarget.value = str
     }
@@ -56,12 +55,12 @@ export const MyDualInputDialog: FC<Props> = (props: Props): ReactElement => {
         props.onConfirm(theTextTyped, theTextTyped2)
     }
     return (
-        <Dialog open={props.open} maxWidth="sm" fullWidth
+        (<Dialog open={props.open} maxWidth="sm" fullWidth
             onClose={props.onClose}
         >
             <DialogTitle>{props.title}</DialogTitle>
             <Box position="absolute" top={0} right={0}>
-                <IconButton onClick={props.onClose}>
+                <IconButton onClick={props.onClose} size="large">
                     <Close />
                 </IconButton>
             </Box>
@@ -87,7 +86,6 @@ export const MyDualInputDialog: FC<Props> = (props: Props): ReactElement => {
                 />
 
             </DialogContent>
-
             <DialogActions>
                 <Button color="primary" variant="contained" onClick={props.onClose}>
                     Cancel
@@ -96,7 +94,7 @@ export const MyDualInputDialog: FC<Props> = (props: Props): ReactElement => {
                     Confirm
                 </Button>
             </DialogActions>
-        </Dialog>
+        </Dialog>)
     );
 };
 

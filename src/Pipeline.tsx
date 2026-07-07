@@ -2,10 +2,10 @@
 
 //import * as nacl from 'tweetnacl-ts'
 import { Buffer } from 'buffer'
-import * as utils from './utils'
+import * as utils from './knotfree-ts-lib/utils'
 import * as app from './App'
 //import * as saved from './SavedStuff'
-import { PublishArgs, PublishReply } from './Types'
+import { PublishArgs, PublishReply } from './publish-types'
 
 // The entry point for the pipeline is the Publish function.
 // We will check a cache for the value. If found then return it.
@@ -28,12 +28,12 @@ var cache = new Map<string, cacheEntry>();
 // cachedCommandsMap is a map from command to a string and none means no encryption.
 // this is also map of commands that we don't want to cache.
 // todo: remove this. and the cache I think
-const cachedCommandsMap = new Map<string, string>([
-    ['get pubk', 'none'],
-    ['get admin hint', 'none'],
-    ['help', 'none'],
-    ['get short name', 'none']
-])
+// const cachedCommandsMap = new Map<string, string>([
+//     ['get pubk', 'none'],
+//     ['get admin hint', 'none'],
+//     ['help', 'none'],
+//     ['get short name', 'none']
+//])
 
 // // Timer to check the cache for expired items.
 setInterval(() => {
@@ -59,28 +59,28 @@ export function Publish(request: PublishArgs) {
     if (request.cmdDescription.includes('🔓')) {
         request.needsEncrypt = false
     }
-    const isNone = cachedCommandsMap.get(request.commandString)
-    if (isNone === 'none') {
-        request.needsEncrypt = false
-    }
-    if (cachedCommandsMap.has(request.commandString)) {
-        let key = getKey(request)
-        let value = cache.get(key)
-        if (value && request.args.length === 0) { // don't cache if there are args.
-            request.cb({ ...request, message: value.message, error: '' })
-            return
-        }
-    }
+    // const isNone = cachedCommandsMap.get(request.commandString)
+    // if (isNone === 'none') {
+    //     request.needsEncrypt = false
+    // }
+    // if (cachedCommandsMap.has(request.commandString)) {
+    //     let key = getKey(request)
+    //     let value = cache.get(key)
+    //     if (value && request.args.length === 0) { // don't cache if there are args.
+    //         request.cb({ ...request, message: value.message, error: '' })
+    //         return
+    //     }
+    // }
     Dedup(request)
 }
 
 export function PublishReturn(reply: PublishReply) {
-    if (cachedCommandsMap.has(reply.commandString)) {
-        let key = getKey(reply)
-        if (reply.message.length > 0 && reply.error.length === 0 && !reply.commandString.includes('error')) {
-            cache.set(key, { message: reply.message, when: Date.now() })
-        }
-    }
+    // if (cachedCommandsMap.has(reply.commandString)) {
+    //     let key = getKey(reply)
+    //     if (reply.message.length > 0 && reply.error.length === 0 && !reply.commandString.includes('error')) {
+    //         cache.set(key, { message: reply.message, when: Date.now() })
+    //     }
+    // }
     reply.cb(reply)
 }
 
@@ -193,7 +193,7 @@ function Encrypt(request: PublishArgs) {
         const nbuffer = Buffer.from(request.nonce)
         var enc = Buffer.from("BoxItItUp failed")
         try {
-            enc = utils.BoxItItUp(bmessage, nbuffer, theirPubk, ourAdminPrivk)
+            enc = utils.BoxItItUp(bmessage, nbuffer, theirPubk, ourAdminPrivk) as Buffer<ArrayBuffer>
         } catch (e) {
             console.log("BoxItItUp failed", e)
         }
@@ -246,7 +246,7 @@ function Encrypt(request: PublishArgs) {
 function EncryptReturn(reply: PublishReply) {
 
     // decrypt 
-    if (reply.needsEncrypt) {
+    if (reply.needsEncrypt && reply.message.startsWith('=')) {
 
         // const nonc = reply.userArgs.get('nonc')
         // if (!nonc || !reply.message.startsWith('=')) {
@@ -272,16 +272,17 @@ function EncryptReturn(reply: PublishReply) {
         const theirPubk = utils.fromBase64Url(reply.thingPublicKey)
         const ourAdminPrivk = utils.fromBase64Url(reply.adminPrivateKey)
         const bmessage = utils.fromBase64Url(localmessage)
-        var dec = Buffer.from("UnBoxIt failed")
+        // var dec = Buffer.from("UnBoxIt failed")
+        var decodeString = "UnBoxIt failed" // atw may have ruined this 7/7/26
         try {
-            dec = utils.UnBoxIt(bmessage, Buffer.from(reply.nonce), theirPubk, ourAdminPrivk)
+            const something = utils.UnBoxIt(bmessage, Buffer.from(reply.nonce), theirPubk, ourAdminPrivk)
+            decodeString = something.toString()
         } catch (e) {
             console.log("UnBoxIt failed", e)
         }
-
-        reply.message = dec.toString()
+        reply.message = decodeString
         if (reply.message.length === 0) {
-            console.log('decryption failed len=0', dec)
+            console.log('decryption failed len=0', decodeString)
             reply.message = 'error decryption failed len=0'
             RetryReturn(reply)
             return
@@ -322,23 +323,30 @@ function Https(request: PublishArgs) {
 
     fetch(url, { mode: 'cors' })
         .then(response => {
-            console.log("response headers", ...response.headers);
-            console.log("response nonce ", response.headers.get('nonc'))
-            response.text().then(data => {
-                let str: string = data
-                console.log('data received ' + str.slice(0, 20))
-                let n = response.headers.get('nonc')
-                if (n?.startsWith('[')) {
-                    n = n.substring(1)
-                    n = n.substring(0, n.length - 1)
-                }
-                console.log("nonc wil be", n)
-                EncryptReturn({ ...request, message: str, error: '', nonce: n != null ? n : 'oops' })
-            })
+            if (response.ok) {
+                console.log("response headers", ...response.headers);
+                //  console.log("response nonce ", response.headers.get('nonc'))
+                response.text().then(data => {
+                    let str: string = data
+                    console.log('data received ' + str.slice(0, 20))
+                    let n = response.headers.get('nonc')
+                    if (n?.startsWith('[')) {
+                        n = n.substring(1)
+                        n = n.substring(0, n.length - 1)
+                    }
+                    console.log("nonc wil be", n)
+                    EncryptReturn({ ...request, message: str, error: '', nonce: n != null ? n : 'oops' })
+                })
+            } else {
+                console.log("response not ok", response)
+                EncryptReturn({ ...request, message: 'Https error ' + response.statusText, error: response.statusText })
+            }
         })
         .catch(error => {
-            console.error(error)
-            EncryptReturn({ ...request, message: 'Https error', error: error })
+
+            console.log(error)
+            const splitError = error.toString().split('\n')
+            EncryptReturn({ ...request, message: 'Https error ' + splitError[0], error: error.toString() })
         });
 }
 
@@ -355,7 +363,7 @@ function Http(request: PublishArgs) {
         .then(response => {
 
             console.log(...response.headers);
-            console.log("response nonce ", response.headers.get('nonc'))
+            // console.log("response nonce ", response.headers.get('nonc'))
             response.text().then(data => {
                 let str: string = data
                 console.log('data received ' + str)
@@ -364,13 +372,14 @@ function Http(request: PublishArgs) {
                     n = n.substring(1)
                     n = n.substring(0, n.length - 1)
                 }
-                console.log("nonc wil be", n)
+                // console.log("nonc wil be", n)
                 EncryptReturn({ ...request, message: str, error: '', nonce: n != null ? n : 'oops' })
             })
         })
         .catch(error => {
-            console.error(error)
-            EncryptReturn({ ...request, message: 'Http error', error: error })
+            console.log(error)
+            const splitError = error.toString().split('\n')
+            EncryptReturn({ ...request, message: 'Http error ' + splitError[0], error: error.toString() })
         });
 }
 

@@ -7,7 +7,7 @@ import { Tooltip } from 'react-tooltip'
 
 
 import * as helpers from './Utils-tsx'
-import * as types from './Types'
+import * as types from './knotfree-ts-lib/types'
 import * as saved from './SavedStuff'
 import * as app from './App'
 
@@ -15,7 +15,6 @@ import ConfirmDialog from './dialogs/ConfirmDialog'
 import MyInputDialog from './dialogs/MyInputDialog'
 import StarsDialog from './dialogs/StarsDialog'
 
-import './MoreStuff.css'
 import * as allMgr from './store/allThingsConfigMgr'
 
 type Props = {
@@ -244,8 +243,11 @@ export const MoreStuff: FC<Props> = (props: Props): ReactElement => {
                 default=''
             />
             <div className='segment'>
-                Just 4 of these words would require 1,000,000,000,000 guesses to crack. Every word makes it 1000 times harder.
-
+                <div>
+                Just 4 of these words would require 1,000,000,000,000 guesses to crack. Every word makes it 1000 times harder. 
+                The default is 14 words from a dictionary of 996 words. So, 996^14 is 9.4e+41 That's about 139 bits. I'm using Go package "crypto/rand". If you're not using https here then
+                it's not secure. Otherwise these are pretty good pass phrases.
+                </div>
                 <Button variant='outlined' onClick={getPassword}>Get Password Ideas</Button>
                 <div>
                     {samplePassword}

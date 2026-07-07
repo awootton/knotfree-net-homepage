@@ -17,3 +17,4 @@ export type HelpAction = {
 export const ADD_HELP = "ADD_HELP"
 
 export type DispatchType = (args: HelpAction) => HelpAction
+

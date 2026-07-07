@@ -13,9 +13,7 @@ import Box from '@mui/material/Box';
 import { ThingCard } from './ThingCard';
 import * as thing from './ThingCard';
 import * as saved from './SavedStuff';
-import * as registry from './ChangeRegistry';
 import * as allMgr from './store/allThingsConfigMgr'
-import * as utils from './utils';
 
 import './Things.css'
 
@@ -29,6 +27,8 @@ type State = {
 }
 
 interface Props {
+    uniqueid: string
+    refresh : ()=>void
 }
 
 export const Things: FC<Props> = (props: Props): ReactElement => {
@@ -36,7 +36,7 @@ export const Things: FC<Props> = (props: Props): ReactElement => {
     const startingState: State = {
         config: allMgr.GetGlobalConfig(),
         refreshCount: 0,
-        uniqueid: utils.randomString(24),
+        uniqueid: props.uniqueid,
 
     }
     const [state, setState] = React.useState(startingState);
@@ -131,7 +131,16 @@ export const Things: FC<Props> = (props: Props): ReactElement => {
                 showAdminKey: false,
                 config: thingConfig,
                 index: i,
-                version: state.refreshCount
+                version: state.refreshCount,
+                uniqueid: state.uniqueid,
+                bump: () => {
+                    // const newState: State = {
+                    //     ...state,
+                    //     refreshCount: state.refreshCount + 1,
+                    // }
+                    // setState(newState)
+                    props.refresh()
+                }
             }
 
             let somejsx = (
@@ -201,6 +210,8 @@ export const Things: FC<Props> = (props: Props): ReactElement => {
 
     return (
         <Box className="container"  >
+
+            <div>The styles in here are highly broken and I'm not working on it right now.</div>
 
             {/* <div className="title" >
 

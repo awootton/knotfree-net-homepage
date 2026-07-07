@@ -7,12 +7,13 @@
 
 import * as mqtt from 'precompiled-mqtt';
 
-import * as utils from './utils'
+import * as utils from 'knotfr ee-ts-lib/src/utils'  aka import {utils} from 'knotf ree-ts-lib'
+
 
 import * as saved from './SavedStuff'
 import * as registry from './ChangeRegistry'
 
-import * as types from "./Types";
+import * as types from "./knotfree-ts-lib/types";
 
 
 import * as app from "./App";

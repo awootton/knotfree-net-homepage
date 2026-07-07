@@ -4,7 +4,6 @@ import * as saved from '../SavedStuff'
 
 export interface Props {
 
-  
     config: saved.ThingConfig
    
 }

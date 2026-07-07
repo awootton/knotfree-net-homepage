@@ -1,11 +1,9 @@
 
-import * as types from '../Types'
+import * as types from '../knotfree-ts-lib/types'
 import * as pipeline from '../Pipeline'
 import * as app from '../App'
 import { WatchEventType } from 'fs'
 import { EnsureKnotFreePublicKey } from './ensureKnotFreePublicKey'
-
-import * as utils from '../utils'
 
 import * as allMgr from './allThingsConfigMgr'
 

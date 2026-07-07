@@ -2,15 +2,40 @@ const webpack = require('webpack')
 
 module.exports = {
 
-    entry: "./lib/connect/index.js",
+   // dummy: "sss"    ,
+
+    // entry: "./lib/connect/index.js",
+    entry: "./src/index.tsx",
 
     //mode: "development",
+    devtool: 'inline-source-map',
 
     output: {
         library: {
             type: "commonjs2"
         },
         filename: "mqtt.browser.js"
+    },
+
+    module: { // atw do we need this? it was once working without it
+        rules: [
+            {
+                test: /\.ts?$/,
+                use: 'ts-loader', // 'babel-loader', //  ?? 
+                exclude: /node_modules/,
+                // options: {
+                //     presets: ['es2015']
+                // }
+            },
+            // {
+            //     test: /\.tsx?$/,
+            //     use: 'babel-loader', // 'ts-loader',
+            //     exclude: /node_modules/,
+            //     // options: {
+            //     //     presets: ['es2015']
+            //     // }
+            // },
+        ],
     },
 
     plugins: [
@@ -25,7 +50,16 @@ module.exports = {
     ],
 
     resolve: {
+        alias: {
+            // how does this work? 'knotfree-ts-lib': require.resolve('./knotfree-ts-lib')
+            // 'knotfree-ts-lib': require.resolve('./node_modules/build/compiled/knotfree-ts-lib/knotfree-ts-lib.d.ts')
+           // example zod: path.resolve('./node_modules/zod/lib/index.umd.js')
+        },
+        extensions: ['.tsx', '.ts', '.js'],
         fallback: {
+
+           //  'knotfree-ts-lib': require.resolve('./node_modules/build/compiles/knotfree-ts-lib/knotfree-ts-lib.js'),
+
             assert: require.resolve('assert'),
             buffer: require.resolve('buffer'),
             console: require.resolve('console-browserify'),

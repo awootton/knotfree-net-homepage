@@ -1,8 +1,11 @@
 
 import React, { FC, ReactElement, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
+import PluggableList from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import './MarkdownDialog.css'
+import './MarkdownDiv.css'
+
+import rehypeRaw from "rehype-raw" // let <img> tags through without quoting them
 
 // material ui
 import {
@@ -16,78 +19,100 @@ import {
     Typography,
 } from '@mui/material';
 
+import useFetch from "react-fetch-hook";
+// import FetchResult from "react-fetch-hook";
+
 import { Close } from '@mui/icons-material/';
 import * as registry from '../ChangeRegistry';
+import * as app from '../App'
 
 type Props = {
     urlprefix: string // eg 
     path: string
 }
 
-export const MarkdownDiv: FC<Props> = (props: Props): ReactElement => {
+export const MarkdownDiv: FC<Props> = (mdprops: Props): ReactElement => {
 
-    const [theMarkdown, settheMarkdown] = React.useState("")
+    const [prefix, SetPrefix] = React.useState(mdprops.urlprefix)
+    const [path, setPath] = React.useState(mdprops.path)
 
-    useEffect(() => {
-        if (theMarkdown.length === 0) {
-            console.log("MarkdownDiv useEffect url", props.urlprefix + props.path)
-            fetch(props.urlprefix + props.path)
-                .then((response) => response.text())
-                .then((data) => {
-                    let got = data as string
+    const [reloadTrigger, setReloadTrigger] = React.useState(0);
 
-                    const replacement = '](' + props.urlprefix
-                    // replace all the link and image paths with ](/  with replacement
-                    got = got.replaceAll('](/', replacement)
-                    // console.log("MarkdownDiv using", got)
-                    settheMarkdown(got) // causes redraws
-                })
-        }
+    console.log('MarkdownDiv url', prefix + path)
 
-        registry.SetSubscripton("MarkdownDivChangeNotification", (name: string, arg: any) => {
-            console.log("MarkdownDiv useEffect got change notification")
-            // we may consider re-writing the markdown here
-            settheMarkdown("") // causes redraw
-        })
+    const fetchResult = useFetch(prefix + path, {
+        formatter: response => response.text(),
     })
 
-    const xxxrenderers = {
-        //This custom renderer changes how images are rendered
-        //we use it to constrain the max width of an image to its container
-        image: ({
-            alt,
-            src,
-            title,
-        }: {
-            alt?: string;
-            src?: string;
-            title?: string;
-        }) => (
-            <img
-                alt={alt}
-                src={src}
-                title={title}
-                style={{ maxWidth: 475 }} />
-        ),
-    };
+    console.log('MarkdownDiv fetched', fetchResult, reloadTrigger)
 
-    //   components={{ p: "div" }} // this is a hack to get rid of the <p> tags 
+    if (fetchResult.isLoading) {
+        return (
+            <>
+                <p>loading...</p>
+            </>
+        )
+    }
+    if (fetchResult.error !== undefined) {
+        const str = '' + fetchResult.error
+        return (
+            <div>
+                Had an error: {str}
+            </div>)
+    }
+
+    const theMarkdown = fetchResult.data ? fetchResult.data as string : 'fetchResult.data is undefined'
+
+    function checkReload(e: React.MouseEvent<HTMLDivElement>) {
+        console.log('checkReload')
+        if (app.isDev) {
+            setReloadTrigger(reloadTrigger + 1)
+        }
+    }
 
     return (
-        <div className='likeTypography'>
-            {/* <Typography> */}
-                <ReactMarkdown children={theMarkdown}
-                    remarkPlugins={[remarkGfm]}
-                    linkTarget="_blank"
-                />
-            {/* </Typography> */}
-        </div>
+        (<div className='likeTypography' onClick={checkReload}>
+            <ReactMarkdown children={theMarkdown}
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeRaw as any]}
+                components={{
+                    a: props => {
+                        if (props.href?.startsWith('https://') || props.href?.startsWith('http://')) {
+                            // a global link
+                            return (
+                                <a href={props.href} target="_blank" rel="noreferrer" >{props.children}</a>
+                            )
+                        } else {
+                            function localLink(e: React.MouseEvent<HTMLButtonElement>) {
+                                console.log('localLink', props.href)
+                                setPath(props.href ? props.href : '/errorPath')
+                            }
+                            return (
+                                // looks just like a link.
+                                (<button className='linkLikeButton' onClick={localLink}>
+                                    {props.children}
+                                </button>)
+                            );
+                        }
+                    },
+                    img: props => {
+                        let src = props.src as string
+                        if (src.startsWith('/')) {
+                            src = prefix + src // a local href
+                        }
+                        return (
+                            <img src={src} alt={props.alt} style={{ maxWidth: 475 }} />
+                        )
+                    }
+                }}
+            />
+        </div>)
     );
 };
 
 export default MarkdownDiv;
 
-// Copyright 2021-2022 Alan Tracey Wootton
+// Copyright 2021-2022-2024 Alan Tracey Wootton
 // See LICENSE
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

@@ -11,14 +11,16 @@ import Menu from '@mui/material/Menu';
 import CircularProgress from '@mui/material/CircularProgress';
 import { Tooltip } from 'react-tooltip'
 
-import './ThingCard.css'
+import './ThingCard.css' // what's another way to get the css applied in here?
 
 import * as saved from './SavedStuff'
-import * as utils from './utils'
+import * as utils from './knotfree-ts-lib/utils'
+import * as storeutils from './store-utils'
 
 import * as  utilsTsx from './Utils-tsx';
 
-import * as types from './Types';
+import * as types from './knotfree-ts-lib/types'
+import * as pubtypes from './publish-types';
 import * as pipeline from './Pipeline';
 import * as app from './App'
 
@@ -45,6 +47,8 @@ export interface Props {
     config: saved.ThingConfig
     index: number,
     version: number,
+    bump : () => void
+    uniqueid: string
 }
 
 export const ThingCard: FC<Props> = (props: Props): ReactElement => {
@@ -52,7 +56,7 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
     const defaultState: State = {
         pendingCommandNonc: '',
         returnValue: '-none-',
-        uniqueid: utils.randomString(24),
+        uniqueid: props.uniqueid,
     }
 
     const [help, setHelp] = React.useState('');
@@ -82,7 +86,7 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
 
     const [isDetails, setIsDetails] = React.useState(false);
 
-    const gotReturnValue = (reply: types.PublishReply) => {
+    const gotReturnValue = (reply: pubtypes.PublishReply) => {
 
         var message: string = reply.message
 
@@ -175,7 +179,7 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
                 }
                 setAdminhint(h)
 
-                utils.searchForAdminHintMatches(index, config, h)
+                storeutils.searchForAdminHintMatches(index, config, h)
             })
         }
 
@@ -195,8 +199,8 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
                 }
             }
 
-            let request: types.PublishArgs = {
-                ...types.EmptyPublishArgs,
+            let request: pubtypes.PublishArgs = {
+                ...pubtypes.EmptyPublishArgs,
                 ...config,
                 cb: gotReturnValue,
                 serverName: app.serverName,
@@ -225,6 +229,13 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
             tokenCache.unsubscribe(config.longName, state.uniqueid)
         };
     })
+
+    function publishAllConfigs() {
+        const c = allMgr.GetGlobalConfig()
+        for (let i = 0; i < c.things.length; i++) {
+            configMgr.publish(i, c.things[i])
+        }
+    }
 
 
     function argTextChanged(e: React.ChangeEvent<HTMLInputElement>) {
@@ -274,6 +285,8 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
         let c = allMgr.GetGlobalConfig()
         c.things.splice(index + 1, 0, newConfig);
         allMgr.publish(c, true)
+        publishAllConfigs()
+        props.bump()
     };
 
     const handleMenuNew = (event: any) => {
@@ -286,16 +299,23 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
         let c = allMgr.GetGlobalConfig()
         c.things.splice(index + 1, 0, newConfig);
         allMgr.publish(c, true)
+        publishAllConfigs()
+        props.bump()
     };
 
     const handleMenuDelete = (event: any) => {
 
         setMenuUp(null);
-
+        let i = index
+        if (i < 0) {
+            i = 0
+        }
+        console.log("handleMenuDelete", i)
         let c = allMgr.GetGlobalConfig()
-        c.things.splice(index, 1)
+        c.things.splice(i, 1)
         allMgr.publish(c, true)
-
+        publishAllConfigs()
+        props.bump()
     };
 
     const handleMenuDetails = (event: any) => {
@@ -314,6 +334,8 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
             c.things.splice(index - 1, 0, me[0]);
         }
         allMgr.publish(c, true)
+        publishAllConfigs()
+        props.bump()
     };
 
     const handleMenuDown = (event: any) => {
@@ -325,6 +347,8 @@ export const ThingCard: FC<Props> = (props: Props): ReactElement => {
             c.things.splice(index + 1, 0, me[0]);
         }
         allMgr.publish(c, true)
+        publishAllConfigs()
+        props.bump()
     };
 
 

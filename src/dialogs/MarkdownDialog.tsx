@@ -1,10 +1,13 @@
 
 import React, { FC, ReactElement, useEffect } from 'react'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
+// import ReactMarkdown from 'react-markdown'
+// import remarkGfm from 'remark-gfm'
 // import   '../homepage.css'
 import   './MarkdownDialog.css'
 
+import { Close } from '@mui/icons-material'
+
+import MarkdownDiv from './MarkdownDiv'
 // material ui
 import {
     Dialog,
@@ -14,11 +17,8 @@ import {
     Button,
     Box,
     IconButton,
-    Typography,
-} from '@mui/material';
+} from '@mui/material'
 
-import { Close } from '@mui/icons-material/';
-import * as registry from '../ChangeRegistry';
 
 type Props = {
     open: boolean
@@ -32,32 +32,32 @@ type Props = {
 
 export const MarkdownDialog: FC<Props> = (props: Props): ReactElement => {
 
-    const [theMarkdown, settheMarkdown] = React.useState("")
+    // const [theMarkdown, settheMarkdown] = React.useState("")
 
-    useEffect(() => {
-        if (theMarkdown.length === 0) {
-            console.log("MarkdownDialog useEffect url", props.urlprefix+props.path)
-            fetch(props.urlprefix+props.path)
-                .then((response) => response.text())
-                .then((data) => {
-                    let got = data as string
+    // useEffect(() => {
+    //     if (theMarkdown.length === 0) {
+    //         console.log("MarkdownDialog useEffect url", props.urlprefix+props.path)
+    //         fetch(props.urlprefix+props.path)
+    //             .then((response) => response.text())
+    //             .then((data) => {
+    //                 let got = data as string
                     
-                    const replacement = '](' + props.urlprefix
-                    // replace all the link and image paths with ](/  with replacement
-                    got = got.replaceAll('](/',replacement)
-                    // console.log("MarkdownDialog using", got)
-                    settheMarkdown(got) // causes redraws
-                })
-        }
+    //                 const replacement = '](' + props.urlprefix
+    //                 // replace all the link and image paths with ](/  with replacement
+    //                 got = got.replaceAll('](/',replacement)
+    //                 // console.log("MarkdownDialog using", got)
+    //                 settheMarkdown(got) // causes redraws
+    //             })
+    //     }
 
-        registry.SetSubscripton("MarkdownDialogChangeNotification", (name: string, arg: any) => {
-            console.log("MarkdownDialog useEffect got change notification")
-            // we may consider re-writing the markdown here
-            settheMarkdown("") // causes redraw
-        })
-    })
+    //     registry.SetSubscripton("MarkdownDialogChangeNotification", (name: string, arg: any) => {
+    //         console.log("MarkdownDialog useEffect got change notification")
+    //         // we may consider re-writing the markdown here
+    //         settheMarkdown("") // causes redraw
+    //     })
+    // })
 
-    const renderers = {
+    const XXXrenderers = {
         //This custom renderer changes how images are rendered
         //we use it to constrain the max width of an image to its container
         image: ({
@@ -78,21 +78,25 @@ export const MarkdownDialog: FC<Props> = (props: Props): ReactElement => {
     };
 
     return (
-        <Dialog open={props.open} maxWidth="sm" fullWidth
+        (<Dialog open={props.open} maxWidth="sm" fullWidth
             onClose={props.onClose}
         >
             <DialogTitle>{props.title}</DialogTitle>
             <Box position="absolute" top={0} right={0}>
-                <IconButton onClick={props.onClose}>
+                <IconButton onClick={props.onClose} size="large">
                     <Close />
                 </IconButton>
             </Box>
             <DialogContent className='likeTypography'>
+                <MarkdownDiv 
+                 urlprefix={props.urlprefix}
+                 path={props.path}
+                />
                 {/* <Typography> */}
-                    <ReactMarkdown children={theMarkdown}
+                    {/* <ReactMarkdown children={theMarkdown}
                         remarkPlugins={[remarkGfm]}
                         linkTarget="_blank"
-                    />
+                    /> */}
                 {/* </Typography> */}
             </DialogContent>
             <DialogActions>
@@ -103,7 +107,7 @@ export const MarkdownDialog: FC<Props> = (props: Props): ReactElement => {
                     Confirm
                 </Button> */}
             </DialogActions>
-        </Dialog>
+        </Dialog>)
     );
 };
 

@@ -1,16 +1,17 @@
 
 import React, { FC, ReactElement, useEffect } from 'react'
-import './homepage.css'
+// import './homepage.css'
 
 import logo from './KnotFreeKnot128cropped.png'
 
-import knotfree_home_md_url from './knotfree-home-md.txt'
+ // import knotfree_home_md_url from './knotfree-home-md.txt'
 import * as allMgr from './store/allThingsConfigMgr'
 import * as saved from './SavedStuff'
 import * as registry from './ChangeRegistry'
 import { MarkdownDiv } from "./dialogs/MarkdownDiv"
 import * as app  from './App'
 
+const knotfree_home_md_url = "https://raw.githubusercontent.com/awootton/knotfree-net-homepage/refs/heads/main/src/knotfree-home-md.txt"
 
 type Props = {
 }

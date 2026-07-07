@@ -1,11 +1,11 @@
 
-import * as types from '../Types'
+import * as types from '../knotfree-ts-lib/types'
 import * as pipeline from '../Pipeline'
 import * as app from '../App'
 import { WatchEventType } from 'fs'
 
 
-import * as utils from '../utils'
+import * as utils from '../knotfree-ts-lib/utils'
 
 import * as allMgr from './allThingsConfigMgr'
 import { EnsureKnotFreePublicKey } from './ensureKnotFreePublicKey'
@@ -44,9 +44,9 @@ function doNamesListFetch(ownerPubk: string) {
     // console.log('doNamesListFetch ourAdminPrivk', c.usersPrivateKey)
     // console.log('doNamesListFetch theirPubk', types.knotfreeApiPublicKey)
     const nbuffer = Buffer.from(nonce)
-    var enc = Buffer.from("BoxItItUp failed")
+    var enc: Buffer = Buffer.from("BoxItItUp failed")
     try {
-        enc = utils.BoxItItUp(bmessage, nbuffer, theirPubk, ourAdminPrivk)
+        enc = utils.BoxItItUp(bmessage, nbuffer, theirPubk, ourAdminPrivk) as Buffer
     } catch (e) {
         console.log("BoxItItUp failed", e)
         const found = pubk2MapItem.get(ownerPubk)
@@ -75,6 +75,9 @@ function doNamesListFetch(ownerPubk: string) {
                     let dataBin = utils.fromBase64Url(str)
                     let decoded = utils.UnBoxIt(dataBin, nbuffer, theirPubk, ourAdminPrivk)
                     names = JSON.parse(decoded.toString())
+                    if (names === null) {
+                        names = []
+                    }
                     console.log('namesListCache got names', names.length)
 
                     const found = pubk2MapItem.get(ownerPubk)
