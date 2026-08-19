@@ -24,8 +24,8 @@ import * as saved from '../SavedStuff';
 import * as pipeline from '../Pipeline';
 import * as app from '../App';
 import * as utilsTsx from '../Utils-tsx';
-import * as utils from '../knotfree-ts-lib/utils'
-import * as types from '../knotfree-ts-lib/types'
+import * as utils from '../knotfree-ts-lib/KnotTokenStack/utils'
+import * as types from '../knotfree-ts-lib/KnotTokenStack/types'
 import * as helpCache from '../store/helpCache'
 import * as tokenCache from '../store/tokenCache'
 import * as adminhintCache from '../store/adminhintCache'

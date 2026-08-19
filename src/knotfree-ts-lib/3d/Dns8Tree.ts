@@ -1,17 +1,21 @@
-
-
 import { ourLocalStorage } from './LocalStorageFakery'
 
-// This file contains the code for the octree data structure and related functions.
+// This file contains the code for the octree data structure and related functions. atw. 2026
+// The shape of the tree is described by the presence or absence (mostly absense) of 
+// domains registered in the Domain Name System on this planet.
+// An example domain name would look like this: "testmain-10n5u3e2p.xyz" which represents the ownership of a 4 meter cube.
+
+// How to build a spacefilling tree using Domain Name System (DNS) domain names: 
+
 // This is the core of the system and is used for both reserving properties and for rendering the world.
 // It includes functions for converting between cube coordinates and URL strings, for getting parent and child cubes, and for parsing lists of cubes.
 // It also includes the main data structures for representing the status of the octree and the results of operations on it.
 
-// using Go naming rules and error returns.
+// I'm fond of using Go naming rules and error returns.
 
-// string format of a cube (see regex below):
+// String format of a cube (see proper, exact, regex below):
 // "worldname"-number['n'|'s']number['u'|'d']number['e'|'w']['-'|'']number'p' with optional '-[0-7]'.
-// where world is the name of world in lowercase letters, 
+// where world is the name of world in lowercase letters and no numbers, 
 // n/s is north/south, 
 // u/d is up/down, 
 // e/w is east/west, 
@@ -20,13 +24,14 @@ import { ourLocalStorage } from './LocalStorageFakery'
 // the size of the cube is 2^2=4 meters, and the coordinates are x = 10*4 meters north, y = 5*4 meters up, z = 3*4 meters east of the origin.
 // When there's a whichParent then the cube coordinates are NOT the actual coordinates of the cube 
 // but rather the coordinates of the parent cube and the whichParent tells us which child cube it is.
+
 export type Cube = {
-    world: string,      // name of the world
+    world: string,      // name of the world - never with the .vr or .xyz TLD. For example, "testmain" and not "testmain.vr"
     x: number,          // in meters, where positive x is north and negative x is south
     y: number,          // in meters, where positive y is up and negative y is down
     z: number,          // in meters, where positive z is east and negative z is west
     p: number,          // a power of 2, representing the size of the cube. For example, if p = 2, then the cube is 2^2=4 units wide in each dimension.
-    whichParent?: number,  // When we know it's a parent. whichParent=0 is not a child. It's the north, east, up parent.
+    whichParent?: number,  // When we know it's a parent. whichParent=0 is not a child. It's the north, east, up parent..
 }
 
 export type CubeString = string
@@ -57,9 +62,11 @@ export function GetParentCubeWithOcttreeIndex(cube: Cube): [Cube, number] {
 // getChildCube makes the cube object, depending upon the index of the child cube. The index is a number from 0 to 7 that represents which child cube it is.
 // we don't know if there's a parent at the location or if it's a leaf.
 export function GetChildCube(cube: Cube, which: number): Cube {
+
+    // Why don't we just use the actual cube instead of the whichParent? Atw FIXME:
     // the whichParent in the cube will override the which passed if there is one.
     if (cube.whichParent !== undefined) {
-        which = cube.whichParent
+        which = cube.whichParent // I don't like this one bit. Get rid of it.
     }
     // is will have the same coordinates as the parent cube except that the p value will be 1 less 
     // and then depending on which child cube it is it will add the appropriate amount to the x, y, and z coordinates.
@@ -83,12 +90,14 @@ export function GetChildCube(cube: Cube, which: number): Cube {
     return childCube
 }
 
-
 // CubeToString will Convert a cube to a string.
 // There are no negative numbers in cube string land. 
-// note that the coordinates must be multiples of 2^p, so if they are not then it's an error. 
+// Note that the coordinates must be multiples of 2^p, so if they are not then it's an error. 
 // For example, if p is 1 then the cube size is 2, so all the coordinates must be even numbers or else it's an error. 
-// When we make it into a string it should round down to the nearest even number and then when we parse it back it should be the same as the original cube but with the coordinates rounded down to the nearest even number. So we expect x to become 2, y to become 4, and z to become -4 when we parse it back from the string.
+// When we make it into a string it should round down to the nearest even number and then when we parse it back it should be the same as the original cube but with the coordinates rounded down to the nearest even number. 
+// So we expect x to become 2, y to become 4, and z to become -4 when we parse it back from the string.
+// It's precise when done correctly. If you convert a cube to a string and then back to a cube, you WILL get the same cube back.
+// I don't expect that people will do this by hand.
 export function CubeToString(cube: Cube): [CubeString, Error | null] {
 
     // we don't add the '-n' even if it's a parent because we don't know it.
@@ -113,6 +122,9 @@ export function CubeToString(cube: Cube): [CubeString, Error | null] {
 // StringToCube will Convert a string to a cube.
 // It's very picky and precise. It will return an error if the string is not in the correct format or if the coordinates are not multiples of 2^p.
 // It's completely reversible with CubeToString. If you convert a cube to a string and then back to a cube, you WILL get the same cube back.
+// Note that it includes the optional -0 to 7 suffix for url's indicating occupancy of a parent cube. 
+// (eg. -4 means the 4 child of the cube defined is occupied.)
+
 export function StringToCube(str: CubeString): [Cube, Error | null] {
     const regex = /^([a-z]+)-(\d+)([ns])(\d+)([ud])(\d+)([ew])(-?\d+)p(?:-([0-7]))?$/
 
@@ -138,6 +150,33 @@ export function StringToCube(str: CubeString): [Cube, Error | null] {
     }
     return [w, null]
 }
+
+export function AddressStringToCube(str: CubeString): [Cube, Error | null] {
+    const regex = /^(\d+)([ns])(\d+)([ud])(\d+)([ew])(-?\d+)p?$/
+
+    const match = str.match(regex)
+    if (!match) {
+        return [{
+            world: "",
+            x: 0,
+            y: 0,
+            z: 0,
+            p: 0
+        }, new Error(`Invalid cube string: ${str}`)]
+    }
+    const world = "" // no world in the address string
+    const xnum = parseInt(match[1]) * (match[2] === 'n' ? 1 : -1)
+    const ynum = parseInt(match[3]) * (match[4] === 'u' ? 1 : -1)
+    const znum = parseInt(match[5]) * (match[6] === 'e' ? 1 : -1)
+    const p = parseInt(match[7])
+    const size = Math.pow(2, p)
+    let w: Cube = { world, x: xnum * size, y: ynum * size, z: znum * size, p }
+    if (match[9]) {
+        w.whichParent = parseInt(match[9])
+    }
+    return [w, null]
+}
+
 
 // IsSameCube returns true if the two cubes have the same world, x, y, z, and p values. 
 // They occupy the same space in the world. 
@@ -169,19 +208,29 @@ export function ParseCubeList(cubeList: string): [Cube[], Error | null] {
 }
 
 
-// GroupTextParamaters to add additional params to a TreeStatus of known cubes. 
-// We'll add these to the TXT record. For weird (knotfree) reasons there should be no spaces in the TXT record.
-// be careful if you do these by hand.
-// key is meta_group_id. Should we just put them in @ ?
+// GroupTextParamaters are to add additional params to a TreeStatus of known cubes. 
+// We'll add these to the TXT record in DNS. For weird (knotfree) reasons there should be no spaces in the TXT record.
+// be careful if you do these by hand. Or other weird reasons (cloudflair) you must change the \" for \' then surround the whole thing
+// with \". The Id is the main thing. Single plain spaces can really just leave these off. 
+
+// it means that the master will be drawing, and responging, on behalf of the group. 
+// The dbg is for debugging and should be ignored in production. We should alwasy just make it localhost:3010.
+// key is meta_group_id. Should we just put them in @ ? no
 // observe 255 characters limit !!
-// we need a rosetta stone for this crap. I'm doing the courtyard, some streets, and a blue sky so far.
-// GLT is coming next. a range of glt for various distances would be nice. 
-// but we have a 256 char limit.
+// we need a rosetta stone for this crap. I'm doing the courtyard, some streets.
+
+// These are NOT web servers. They deliver a GLB by messaging, not http. 
+
+// but we have a 256 char limit for this TXT
 // note that just because of this doesn't mean we're not still loading the iFrame. It'sjust that the iFrame won't be rendering. (not working yet)
 // I am accidentally inventing a whole new language for describing 3d scenes in DNS TXT records. It's pretty exciting. NOT!!!!
 // it's terrible and it has to go. 
 
-export type GroupTextParameters = {
+// This is leaving. All we need is the id, the dbg, the mst, 
+// none of this floor, ceiling, asset, type, etc. crap. 
+// That's all coming from the iFrame. and moving to the AuxTreeStatus
+
+export type OldGroupTextParameters = {
 
     // the group that this tree belongs to, which is the same for all leaf nodes rendered by the same iFrame or server.
     // if one is not assigned then one will be generated. Many things are in a group of one, by themselves.
@@ -197,18 +246,20 @@ export type GroupTextParameters = {
     // ali?: string      // alias use this for the iFrame src instead.
     // p?: number       // optional port for the iFrame to connect to. If not specified, use default port 80.
 
-    // master
-    mstr?: boolean // for the iFrame to connect to. This is who we ask for assets. We don't have to tunnel all the items
+    // now always required or what's the point.
+    // We would use this as the address of the iFrame!!!!!
+    master: string // for the iFrame to connect to. 
     // in a group, just this One. It's an error if there's none. . 
 
-    //ex?: Record<string, unknown> // for extensibility. 
-
+    // This (below) needs to go away eventually. We used this because message-loading of glb wasn't written yet, so we needed a temporary way to specify the type and asset directly in the DNS TXT records.
+    // We do NOT want to call http for ANYTHING like this or not like this. ever. 
     // someone please document this crap language I just invented. Or, tear it out.
     type?: string // example: floor, ceiling and that's it?
-    asset?: string // example: url to a file like street.jpg, or Duck.gtl or color:#808080. 
+    asset?: string // example: url to a file like street.jpg, or Duck.gtl or color:#808080. Just the three so far and gltf has to go away. 
 }
 
 // TreeStatus is a record of cubes that exist and also ones that don't exist.
+// For a cache.
 // We have records of ones are empty space and ones that are parents. 
 // For instance. if we have testmain-10n5u3e2p-0 'found' but not testmain-10n5u3e2p-1, 
 // we know that the cube in space "10n5u3e2p" has a subtree in the 0th octant but is empty in the 1st octant.
@@ -216,7 +267,7 @@ export type GroupTextParameters = {
 
 export type TreeStatus = {
 
-    name: string,               // without the .vr or .xyz TLD. For example, "testmain-10n5u3e2p" and not "testmain-10n5u3e2p.vr"
+    name: string,               // without the .vr or .xyz TLD. For example, "testmain-10n5u3e2p" and NEVER "testmain-10n5u3e2p.vr"
     found: boolean,             // aka exists in DNS somewhere. 
 
     // do we need both the cube AND the name?
@@ -232,6 +283,7 @@ export type TreeStatus = {
     // is TXT meta_group_id
     // only happens to the leaf nodes.
     // false means we looked them up and got "" else there would be an object here
+    // all we EVER need is the id. and that can just be the cube name unless there's a group (like a street).
     groupId?: GroupTextParameters | undefined, // the group that this tree belongs to, which is the same for all leaf nodes rendered by the same iFrame or server. 
 
     // do we need this? Maybe it's just a maintance problem waiting to happen.
@@ -246,22 +298,189 @@ export type TreeStatus = {
     error: Error | null         // nullable Error type. unused?
 
     // weOwnThis? would be convienent but is really only used for the reserve function. 
-
     // some iFrameStuff? no, put that in the AuxTreeStatus since we only need it for the leaf nodes that we're actually rendering.
     //        let fr = document.getElementById(params.name) as HTMLIFrameElement
     // <iframe src={params.target} id={params.name} width={100} height={100}
     // onLoad={loaded} sandbox="allow-scripts allow-popups" ></iframe>
 }
 
-// we look these up with the leaf name. Unused, so far.
-export type AuxTreeStatus = {
+// These three are four different generations and all do the same thing.
+// I'm trying to get rid of them.
+// Just stick it on the TreeStatus and scrounge for it later if we ever need it.
+// All we really need is the id and the master. The rest is just for debugging and testing.
+// It just shows that somethings are hard to get rid of. 
 
-    textureUrl?: string,
-    // iFrame
-    theRealUrl?: string, // if redirected from .vr to .xyz or something else. or if GroupTextParameters has hints
-
-    theGLTFile: any
+  export type GroupTextParameters = {
+    id: string, // usually just a random string but some share a common id. For instance, 
+    dbg?: string, // example  localhost:3010, ignore in prod.
+    master: string // for the iFrame to connect to. 
+    type?: string // example: floor, ceiling and that's it?
+    asset?: string // example: url to a file like street.jpg, or Duck.gtl or color:#808080. Just the three so far and gltf has to go away. 
 }
+
+
+// OldeTxJunk eeeeewwwwww same as GroupTextParameters but less question marks.
+export type OldeTxJunk = {
+    color: string // optional backup color for the leaf if the glb fails to load. For example, "#808080" for gray.
+    textureUrl: string // optional backup text for the leaf if the glb fails to load. For example, "#808080" for gray.
+    repeat: number // optional backup asset for the leaf if the glb fails to load.
+    type: string // optional backup type for the leaf if the glb fails to load. For example, "floor" or "ceiling".
+    asset: string // optional backup asset for the leaf if the glb fails to load. For example, "cobblestonesgrok512.jpg:repeat:20" for a cobblestone texture.
+}
+
+// we look these up with the leaf name.
+// We're going to have one of these for each group.
+// Some groups will only have one leaf. An AuxLeafStatus will NEVER represent an empty cube, unlike a TreeStatus.
+export type AuxLeafStatus = {
+
+    // these two are a litle awkwarkd.
+    //  cam we name this back yet?
+    wholeMaster: string // of the base w/0 the tld. or any tree index's. It's parseable to a cube. It has the world name.
+    
+    justTheWorld: string // It has Just the world name.
+    // We DO strip off the world name to save space. lol
+    // commas?
+    leaves: string[] // this is the leafnames from the group. No TLD's, no world name. It will have to pass through the barrier.
+
+    // these are old antiques from the GroupTextParameters. 
+    oldeTxtJunk?: OldeTxJunk 
+    // if we have this when why the heck do we have the oldeTxtJunk? It's a mess.
+    txtParams: GroupTextParameters // temporarily
+
+    // map stack of GLT blobs that we will play.
+    // The iFrame sends the GLB file to us.
+
+    // I'll make this a dictionary of blobs so that we can have multiple GLB files for different distances., or somethng.
+    // and for animations. It could get complicated.
+    // they say Record is effecient and fast but 
+    // I can debug Map better
+    // glbItems: Record<string, GlbStatus>,
+    glbItems: Map<string, GlbStatus>,
+
+    // other stuff that a group of leaves or ThingAtars might need to do their business. 
+}
+
+export type GlbStatus = {
+    blob: Blob,
+    active: boolean, // play me! 
+}
+
+
+// Where's the map of names to AuxLeafStatus
+// the name is the leaf name. w/o the .vr or .xyz TLD. For example, "testmain-10n5u3e2p" and not "testmain-10n5u3e2p.vr"
+//  private
+const nameToAuxLeafStatus: Record<string, AuxLeafStatus> = {}
+
+export function LookupAuxLeafStatus(name: string): AuxLeafStatus | undefined {
+    const newname = NoTld(name) // strip off the .vr or .xyz TLD if present
+    if (newname !== name) {
+        console.warn(`LookupAuxLeafStatus: name had TLD, stripped to ${newname}`)
+    }
+    return nameToAuxLeafStatus[newname]
+}
+
+export function CacheAuxLeafStatus(name: string, auxLeafStatus: AuxLeafStatus): void {
+    const newname = NoTld(name)
+    if (newname !== name) {
+        console.warn(`LookupAuxLeafStatus: name had TLD, stripped to ${newname}`)
+    }
+    nameToAuxLeafStatus[newname] = auxLeafStatus
+}
+
+// GetTheAuxLeafNames returns a list with the world name back on.
+// we should have a type that means parsable to a cube. It's a string that is a valid cube string. No TLD and no -0
+export function GetTheAuxLeafNames(aux: AuxLeafStatus): string[] {
+    const [masterCube, err] = StringToCube(aux.wholeMaster)
+    if (err) {
+        console.error(`GetTheAuxLeafNames: invalid master cube string: ${aux.wholeMaster}`)
+        return []
+    }
+    const result: string[] = []
+    for (const leafName of aux.leaves) {
+        result.push(masterCube.world + "-" + leafName)
+    }
+    return result
+}
+
+// GetTheAuxLeafNames returns a list with the world name prefixed back on.
+// we should have a type that means parsable to a cube. It's a string that is a valid cube string. No TLD and no -0
+export function GetTheAuxCubes(aux: AuxLeafStatus): Cube[] {
+    const [masterCube, err] = StringToCube(aux.wholeMaster)
+    if (err) {
+        console.error(`GetTheAuxLeafNames: invalid master cube string: ${aux.wholeMaster}`)
+        return []
+    }
+    const result: Cube[] = []
+    for (const leafName of aux.leaves) {
+        const [leafCube, err] = StringToCube(masterCube.world + "-" + leafName)
+        if (err) {
+            console.error(`GetTheAuxLeafNames: invalid leaf cube string: ${masterCube.world}-${leafName}`)
+            continue
+        }
+        result.push(leafCube)
+    }
+    return result
+}
+
+// A TreeStatus is additional infor about a cube. 
+// The Aux info is for when there's a group of cubes handled with one iFrame.
+export function GetTreeStatusFromAux(aux: AuxLeafStatus): TreeStatus[] {
+    const [masterCube, err] = StringToCube(aux.wholeMaster)
+    if (err) {
+        console.error(`GetTheAuxLeafStatus: invalid master cube string: ${aux.wholeMaster}`)
+        return []
+    }
+    const result: TreeStatus[] = []
+    for (const leafName of aux.leaves) {
+
+        // we need the hostname
+        const ts = GetTreeStatusFromCache(aux.justTheWorld + "-" + leafName) // to save save space and mazimize greif.
+        if (ts) {
+            result.push(ts)
+        }
+        else {
+            console.error(`GetTheAuxLeafStatus: failed to find TreeStatus for leafName: ${aux.wholeMaster}-${leafName}`)
+        }
+    }
+    return result
+}
+
+export function VerifyCubeName(name: string): boolean {
+    const tmp = NoTld(name) // strip off the .vr or .xyz TLD if present
+    if (tmp !== name) {
+        console.warn(`VerifyCubeName: name had TLD, stripped to ${tmp}`)
+        return false
+    }
+    const [cube, err] = StringToCube(name)
+    if (err) {
+        console.error(`VerifyCubeName: invalid cube name: ${name}`)
+        return false
+    }
+    return true
+}
+
+
+export function GetTheAuxTreeStatus(aux: AuxLeafStatus): TreeStatus[] {
+    const [masterCube, err] = StringToCube(aux.wholeMaster)
+    if (err) {
+        console.error(`GetTheAuxLeafStatus: invalid master cube string: ${aux.wholeMaster}`)
+        return []
+    }
+    const result: TreeStatus[] = []
+    for (const leafName of aux.leaves) {
+
+        // we need the hostname
+        const ts = GetTreeStatusFromCache(aux.justTheWorld + "-" + leafName) // to save save space and mazimize greif.
+        if (ts) {
+            result.push(ts)
+        }
+        else {
+            console.error(`GetTheAuxLeafStatus: failed to find TreeStatus for leafName: ${aux.wholeMaster}-${leafName}`)
+        }
+    }
+    return result
+}
+
 
 // HaveChildBits is a record of if each child cube exists and if, when we go there, it's a parent or a leaf. 
 // We encode this in a single number for space and speed.
@@ -269,9 +488,9 @@ export type AuxTreeStatus = {
 // So if it's 5 then we know that child 0 and child 2 exist but child 1 does not exist.
 // bit 8 is for isParent of subcube 0 etc
 // bit 16 is for isXyz if it's an .xyz domain name and not a .vr domain name.
-// best displayed in hex. 
+// It's best displayed in or with the util - DisplayChildBits.
 // I hate this for being anti agile but love it for space and speed.
-// but I love it because copilot typed it. lol.
+// but I love it because copilot typed it for me. lol.
 export function HaveChildBits(childrenBits: number): boolean {
     return childrenBits !== -1
 }
@@ -401,6 +620,16 @@ export function GetChildBitsCache(name: string): ChildBitsCacheEntry | null {
     if (found) {
         const age = Date.now() - found.when
         if (age > gChildBitsCacheMaxAge) {
+            // put it on a Q to get fixed later. Or, just order ALL the child bit cache again. like we did at the beginning.s
+            // right now this will kill prod.
+            return found || null
+            // we should return the current value, as we do, and then immediately start a calcChildrenBits.
+            // TODO: we should have a Q of names to calcChildrenBits and then we should have a worker that does them one at a time.
+            // Hey CP, you moron, Why would we do them one at a time? 
+            // when the calcChildrenBits is done then we should update the cache make a note of 
+            // whether anything changed because mostly nothing will. 
+            // see calcChildrenBitsForName or something
+
             gChildBitsCache.delete(name)
             ourLocalStorage.removeItem(name)
             return null // ouch.
@@ -479,7 +708,7 @@ export function SetTheWholeChildBitsLocalCacheFromString(entries: string): void 
 
 
 // SetTheWholeChildBitsLocalCache could be used to prime an entire cache from a server. 
-
+// As we do.
 export function SetTheWholeChildBitsLocalCache(entries: Map<string, string>): void {
     for (const [key, value] of entries) {
         // localStorage.setItem(key, value)
@@ -518,10 +747,33 @@ export function SetTheWholeChildBitsLocalCache(entries: Map<string, string>): vo
 
 // a cache of name to cube of that cube testmain-0n0u0e5p and testmain-0n0u0e5p-0 are different entries.
 // This does not persist across page reloads. It's just for the current session. We will persist the child bits cache across page reloads but not this one.
-export const gCubeCache: Map<string, TreeStatus> = new Map()
+const gTreeStatusCache: Map<string, TreeStatus> = new Map()
+
+export function GetTreeStatusFromCache(name: string): TreeStatus | undefined {
+    return gTreeStatusCache.get(name)
+}
+export function SetTreeStatusInCache(name: string, treeStatus: TreeStatus): void {
+    if (!VerifyCubeName(name)) {
+        console.error(`SetTreeStatusInCache: invalid cube name: ${name}`)
+        return
+    }
+    gTreeStatusCache.set(name, treeStatus)
+}
+
+export function ClearTreeStatusCache(): void {
+    gTreeStatusCache.clear()
+}
+
+export function TreeStatusCacheSize(): number {
+    return gTreeStatusCache.size
+}
+
+export function TreeStatusCacheEntries(): [string, TreeStatus][] {
+    return Array.from(gTreeStatusCache.entries())
+}
 
 // more stuff about a leaf. used.
-export const gAuxTreeCache: Map<string, AuxTreeStatus> = new Map()
+// export const gAuxTreeCache: Map<string, AuxLeafStatus> = new Map()
 
 // export type ThingsThatAlreadyExistType = {
 //     cube: Cube,
@@ -548,7 +800,8 @@ export const gAuxTreeCache: Map<string, AuxTreeStatus> = new Map()
 
 
 // FromXToY: invent the from x to y function to generate a list of cubes between two cubes. 
-// That's it. Just make a list of cubes.
+// That's it. Just make a list of cubes. It's crazy sometimes.
+// Note that these lack limits.
 // Input is like "from testmain-3n0u3e3p to testmain-3n0u3w3p" makes the ones with 3e, 2e, 1e, 0e, 1w, 2w, and 3w
 // so, 7 of them. Note, there is no 0w. It's the same as 0e. It's like saying -0 instead of 0. 
 // and the output is a comma separated list of the cubes in the path from the first cube to the second cube, inclusive. 
@@ -779,6 +1032,13 @@ export class OctTreeIntersector {
     }
 
     AddKnownCube(cube: Cube): (Error | null) {
+
+        // verify the cube.
+        if ( !cube) {
+            console.error("AddKnownCube: cube is null or undefined")
+            return new Error("AddKnownCube: cube is null or undefined")
+        }
+
         // we assume that the coordintes are += 64k. Check that?
         // we want to add this cube to the octree. We need to find the correct place for it in the tree and then add it there. 
         // we can do this by starting at the root and then going down the tree until we find the correct place for it. duh, thanks copilot.
@@ -841,6 +1101,46 @@ export class OctTreeIntersector {
             index++
         }
     }
+}
+
+export function worldFromCubeName(name: string): string  {
+    const splitName = name.split("-")
+    if (splitName.length < 2) {
+        console.error(`worldFromCubeName: name ${name} is not a valid cube string`)
+    }
+    return splitName[0]
+}
+
+// We are no longer carryig around the TLD in the name ever. We use this old utility to detect and get rid of it.
+export const NoTld = (name: string): string => {
+    if (!name) {
+        console.error("NoTld: name is empty or undefined")
+        return "you_disgusting_monster"
+    }
+    let result = name
+    if (name.endsWith(".vr")) {
+        console.error("NoTld: getting rid of this ")
+        result = name.substring(0, name.length - 3)
+    }
+    if (name.endsWith(".xyz")) {
+        console.error("NoTld: getting rid of this ")
+        result = name.substring(0, name.length - 4)
+    }
+    // let's veryify the name while whe're here.
+    const [cube, err] = StringToCube(result)
+    if (err) {
+        console.error(`NoTld: name ${result} is not a valid cube string: ${err.message}`)
+        return "you_disgusting_monster2"
+    }
+    return result
+}
+
+// reurns the coords of the center of the cube in world coordinates.
+export const CubeToCenter = (cube: Cube): [number, number, number] => {
+    // someone please tell me 2**x is the same as 1<<x in C or go or any other language. Right?
+    const halfSize = (2 ** (cube.p - 1))
+    const center: [number, number, number] = [cube.x + halfSize, cube.y + halfSize, cube.z + halfSize]
+    return center
 }
 
 // Copyright 2026 Alan Tracey Wootton

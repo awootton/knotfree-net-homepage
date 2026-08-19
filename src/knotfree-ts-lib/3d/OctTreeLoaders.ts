@@ -1,8 +1,7 @@
 
 import * as THREE from 'three';
 
-import { CacheIntf } from './CacheIntf';
-import * as oct from './UrlOctTree'
+import * as oct from './Dns8Tree'
 // import * as atwdns from './DnsTypes'
 import { error } from 'console';
 import * as utils from './utils';
@@ -78,8 +77,8 @@ export async function twoWayLookupPart1(rawChain: oct.Cube[], recordType: "A" | 
             console.error(`Error converting cube to URL string: ${err}`)
             continue
         }
-        let vrName = `${name}.vr`
-        let xyzName = `${name}.xyz`
+        let vrName = `${name}.vr`   // allowed
+        let xyzName = `${name}.xyz`  // allowed
         if (prefix) {
             vrName = `${prefix}.${vrName}`
             xyzName = `${prefix}.${xyzName}`
@@ -299,6 +298,22 @@ export async function TwoWayLookupAndMerge(rawChain: oct.Cube[]): Promise<[oct.T
     //     return TwoWayLookupAndMergeOldAndBusted(rawChain)
     // }
 }
+
+
+// We have an expired ChildBitsCacheEntry. Calculate a new value for it.
+// Come on CP. I dare you. (I threw away the junk he wrote.)
+// Wow. It's not right. It needs to call 
+// async function calcChildrenBitsForName(name: string): Promise<[number, Error | null]> {
+
+//         if (tree.childrenBits === -1) {
+//             const [childBits, err] = await calcChildrenBits(tree.cube, tree.name, tree.childrenBits);
+//             tree.childrenBits = childBits;
+//             if (err) {
+//                 console.error("bvts Error calculating children bits for tree ", tree.name, err)
+//                 return err
+//             }
+//         }
+
 
 
 // Copyright 2026 Alan Tracey Wootton

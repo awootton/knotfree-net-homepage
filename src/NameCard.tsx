@@ -10,10 +10,10 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 
 import { Tooltip } from 'react-tooltip'
 
-import * as utils from './knotfree-ts-lib/utils'
+import * as utils from './knotfree-ts-lib/KnotTokenStack/utils'
 
 // import * as types from './Types';
-import * as types from './knotfree-ts-lib/types'
+import * as types from './knotfree-ts-lib/KnotTokenStack/types'
 import * as app from './App'
 
 import * as allMgr from './store/allThingsConfigMgr'

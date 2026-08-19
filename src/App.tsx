@@ -24,7 +24,7 @@ import * as saved from './SavedStuff'
 
 // import * as mqtt from "./MqttClient"
 import * as more from "./MoreStuff"
-import * as utils from './knotfree-ts-lib/utils'
+import * as utils from './knotfree-ts-lib/KnotTokenStack/utils'
 
 import Toolbar from '@mui/material/Toolbar';
 import * as registry from './ChangeRegistry'

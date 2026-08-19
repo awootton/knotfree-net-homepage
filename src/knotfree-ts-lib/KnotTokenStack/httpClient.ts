@@ -158,9 +158,9 @@ export function NewDefaultHttpMonger(): HttpMonger {
                 if (sub) {
                     let dom = sub.optionalKeyValues.get('local-hoster')
                     if (dom) {
-                        console.log("suback ", dom.toString())
+                        console.log("NewDefaultHttpMonger onPacket suback ", dom.toString())
                     } else {
-                        console.log("suback ", "unknown")
+                        console.log("NewDefaultHttpMonger onPacket suback ", "unknown")
                     }
                 } else {
                     console.log("http onPacket unknown packet", u.toString())
@@ -187,8 +187,8 @@ export function NewDefaultHttpMonger(): HttpMonger {
             const theHttp = buffer.subarray(0, contentEndIndex)
             buffer = buffer.subarray(contentEndIndex)
             // do we need these?
-            console.log("HttpMonger theHttp-->"+theHttp.toString()+"<----------")
-            console.log("HttpMonger new buffer-->"+buffer.toString()+"<----------")
+            console.log("HttpMonger packer.onPacket theHttp-->"+theHttp.toString()+"<----------")
+            // console.log("HttpMonger packer.onPacket new buffer-->"+buffer.toString()+"<----------")
             // console.log("got http message", packets.Asciiizer(theHttp,256))
             // console.log("HttpMonger new buffer", packets.Asciiizer(buffer,256))
 

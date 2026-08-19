@@ -17,7 +17,7 @@
 
 import * as nacl from 'tweetnacl-ts'
 
-import * as util from '../utils'
+import * as util from '../KnotTokenStack/utils'
 
 // import * as  util from '../gotohere/knotservice/Util'
  

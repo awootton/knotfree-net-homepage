@@ -3,12 +3,16 @@
 import { Buffer } from 'buffer'
 import * as nacl from 'tweetnacl-ts'
 import sha256 from "fast-sha256";
-import * as  base64  from './TypescriptBase64';
+import * as  base64 from './TypescriptBase64';
+import * as  oct from './Dns8Tree';
 
+
+// derive domain name from the host name. We don't care about the TLD. We just want the domain name.
+// It's only compliicated bececause of debug mode.
 
 // FIXME: atw use crypto.randomBytes(size[, callback]) and convert to b64 ?
 // randomString returns a random string of length len in base 62
-export function randomString(len: number) {
+export function RandomString(len: number) {
     const charSet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     var randomString = '';
     for (var i = 0; i < len; i++) {
@@ -88,14 +92,81 @@ export function UnBoxIt(message: Buffer, nonce: Buffer, theirPublicKey: Buffer, 
 
 // a crappy hash function
 export function djb2Hash(str: string): number {
-  let hash = 5381;
-  
-  for (let i = 0; i < str.length; i++) {
-    // Left shift bitwise operation combined with character extraction
-    hash = (hash * 33) ^ str.charCodeAt(i);
-  }
-  
-  return hash >>> 0; // Converts result into an unsigned 32-bit integer
+    let hash = 5381;
+
+    for (let i = 0; i < str.length; i++) {
+        // Left shift bitwise operation combined with character extraction
+        hash = (hash * 33) ^ str.charCodeAt(i);
+    }
+
+    return hash >>> 0; // Converts result into an unsigned 32-bit integer
+}
+
+// stripTLD assumes name and then .TLD. We just want the name. We don't care about the TLD.
+// But we DO care if the structure is wrong
+// also, this may correctly find the domain as a multilevel domain name. Check the tests. lol.
+// get rid of this type of thing.
+export function StripTLD(domainName: string): [string, Error | null] {
+    const parts = domainName.split('.');
+    if (parts.length < 2) {
+        //return ["bad_domain_name", new Error("Invalid domain name")];
+        // maybe it's already missing the TLD? Let's just return it as is. We don't care about the TLD.
+        return [domainName, null];
+    }
+    let expectedName = parts[0];
+    if (expectedName.endsWith("_vr")) { // this odd thing from knotfree subdomain routing.
+        expectedName = expectedName.slice(0, -3); // Remove the "_vr" suffix
+    }
+    return [expectedName, null];
+}
+     
+// FindDomainName os supposed to ding the name (eg ) and return it. eg "testmain-2n0u7w2p"
+// it's way to complicated because of the TLD and the subdomain routing. We don't care about the TLD. We just want the domain name.
+export function FindDomainName(hostname: string, windowsSearch: string): [string, Error | null] {
+    var domainName: string;
+    // is it the host? It could be the host and it could have a strange TLD (xxx,zzz)
+    domainName = hostname // window.location.hostname;
+    // split it and verify it? 
+    // it HAS TO have a tld? Right?
+    var err: Error | null = null;
+    [domainName, err] = StripTLD(domainName); // chop it off, pretend we're good.
+    // if (err) either way, keep trying. 
+    {
+        // it's still ok. this may mean it's localhost, which is useless to us.
+        // unless we get it from the query parameter. eg: http://localhost:3010/?domain=testmain-2n0u7w2p.vr&asset=undefined&type=undefined
+        const urlParams = new URLSearchParams(windowsSearch);
+        const tmp = urlParams.get('domain');
+        if (tmp) {
+            domainName = tmp;
+            // let's remove the suffixes if they exist.
+            if (domainName) {
+                var err2: Error | null = null;
+
+                [domainName, err2] = StripTLD(domainName);
+                if (err2) {
+                    // there was no TLD?? What to do about that? - nothing.
+                }
+                // check for it in a a query paramater.
+                // now we should have a good domain name.
+                const [cube, err] = oct.StringToCube(domainName);
+                if (err) {
+                    console.log("AppSplitter domainName is not a valid cube name: " + domainName);
+                    return ["", new Error("Domain Name Not Found " + domainName)];
+                }
+            }
+            return [domainName, null]
+        }
+        // we have no domain name. What to do about that? 
+        // console.log("AppSplitter we have no domain name. What to do about that?");
+        return ["", new Error("No Domain Name " + windowsSearch)]
+    }
+    // verify it is a valid cube name. If not, return an error. 
+    const [cube, err3] = oct.StringToCube(domainName);
+    if (err3) {
+        console.log("AppSplitter domainName is not a valid cube name: " + domainName);
+        return ["", new Error("Domain Name Not Found " + domainName)];
+    }
+    return [domainName, null];
 }
 
 // Copyright 2026 Alan Tracey Wootton

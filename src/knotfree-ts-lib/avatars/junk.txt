@@ -1,0 +1,598 @@
+sequence:
+
+garbage handleTanMessages
+
+
+world does subscribe to "testmain-2n0u4w2p-about"  ok  PubSub bridge subscribe testmain-2n0u4w2p-about who:  
+execute_theSubscribe sent to window.parent.postMessage
+
+post execute_theSubscribe to window.parent.postMessage(submsg, '*');
+
+another subscribe? - over and over. It won't stop.
+
+    we don't send a tan message when we're not running as a iFrame.
+
+it sends the tan subscribe to window.parent.postMessage
+
+somebody get a tan message handleTanMessages
+
+        execute_theSubscribe
+    
+There's a sub for testmain-2n0u4w2p-about so all is good. Change that to "-api".
+
+Now we want to see the 'rpc' sequence from !!!
+
+    1) make temp sub from  RenderThingsWithAuxGroups
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+what's fun (not) about a small trash can is how the sync will NEVER let you get rid of it. 
+ha ha. sucker. 
+
+
+// Copyright 2026 Alan Tracey Wootton
+// See LICENSE
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+// move this into the the bridge pub/sub system. 
+// can we have a useEffect not in a component? I don't think. 
+// useEffect(() => {
+//     // Add listener on mount
+//     // Does this get ALL the messages? 
+//     // I think a lot of people on the island could get these.
+//     window.addEvent Listener("message", handleMessageOrangeWest);
+//     // Clean up listener on unmount to prevent memory leaks
+//     return () => window.removeEventListener("message", handleMessageOrangeWest);
+// }, []); // Empty array ensures this runs once on mount
+
+
+// function bridgeCommandsFromIsland(cmd: string, key: string, who: string, cb: (status: any, err: Error) => any) {
+//     switch (cmd) {
+//         case "subscribe":
+//             subscribe(key, who, (status: any, err: Error) => {
+//                 // call the callback that was passed in from the island.
+//                 cb(status, err)
+//             });
+//             break;
+//         case "publish":
+//             subscribe(key, who, (status: any, err: Error) => {
+//                 // call the callback that was passed in from the island.
+//                 cb(status, err)
+//             });
+//             break;
+
+//     }
+// }
+
+// function islandCommandFromMainland(cmd: string, key: string, who: string, cb: (status: any, err: Error) => any) {
+
+//     switch (cmd) {
+//         case "publish":
+//             subscribe(key, who, (status: any, err: Error) => {
+//                 // call the callback that was passed in from the island.
+//                 cb(status, err)
+//             });
+//             break;
+//         case "subscribe":
+//             subscribe(key, who, (status: any, err: Error) => {
+//                 // call the callback that was passed in from the island.
+//                 cb(status, err)
+//             });
+//             break;
+//     }
+
+// }
+
+
+
+    // console.log("ListOfIframes: renderOneItem: batchInfo ", batchInfo, ", loaded: ", loaded);
+
+    // we're going to subscribe to the name of the group, or master, or just the domain name of a space. (all the same thing).
+    // So we have an address where we can send and receive messages.
+    // It's name-to-frame with no tld. The iFrame will subscribe to that and then we can send messages to it.
+
+    // useEffect(() => {
+
+    //     console.warn("RenderOneFrameGroup: useEffect: ", master);
+    //     console.warn("RenderOneFrameGroup: loaded: ", loaded);
+    //     console.warn("RenderOneFrameGroup:  master: ", master);
+    //     console.warn("RenderOneFrameGroup:  iframeRef.current: ", iframeRef.current);
+
+    //     if (loaded) {
+
+    //         // what is this crap?
+    //         if (oct.NoTld(master) !== master) {
+    //             console.warn("renderOneItem: master master has TLD: ", oct.NoTld(master), " aux.master: ", aux.wholeMaster)
+    //         }
+
+    //         // just once, right?
+    //         // there's no place HERE where we process messages.
+    //         // Why would I want to send a message to an HTMLIFrameElement?
+    //         // I can see wanting to get to the  window.addEventListener("message", handleMessageOrangeWest
+    //         // INSIDE the iFrame, but not here. 
+
+    //         sub.subscribe(oct.NoTld(master) + "-to-frame", (message) => {
+
+    //             if (iframeRef.current != null) {
+    //                 const iframe = iframeRef.current as HTMLIFrameElement;
+    //                 if (iframe.contentWindow) {
+
+    //                     // console.log("renderOneItem: iFrame has window name", iframe.name) // is empty
+    //                     console.log("renderOneItem: -to-frame has window name", master) // is testmain-0n0u0e5p.vr
+
+    //                     // This Origin * thing is going to be a problem.
+    //                     // I have no problems locking everyone, except for gotohere.com, out but it 
+    //                     // really doesn't seem nice. It's a lock out and that's how projects like this DIE.
+    //                     // This will pass the message through to the iFrame. That's ALL it does
+    //                     // there's a publish on the other end!!
+
+    //                     // the message has to be a valid MessageBaseClass from messagesTypes.ts type
+    //                     // it's not serialozed thrpugh yje subscriptiom system
+    //                     // but it's about to be`.
+
+    //                     // OK, I' decided to filter these
+    //                     const filtered = messes.ensureMessageBaseClass(message);
+    //                     if (filtered) {
+    //                         const options: WindowPostMessageOptions = {
+    //                             targetOrigin: "*", // Replace with the actual origin of the iframe for security
+    //                         };
+    //                         const retMessage: messes.MessageBaseClass = {
+    //                             to: "nobody",
+    //                             from: "iframe handle top of screen",
+    //                             type: "dummy useless message to an html iframe element",
+    //                             sessionId: "none",
+    //                         }
+    //                         // just send something already.
+    //                         console.log("renderOneItem: sending message to iframe: master: ", master, " message: ", retMessage)
+    //                         // where is this going? Where does it come out.
+    //                         // It's not a publish. !
+    //                         // iframe.contentWindow.postMessage(retMessage, options);
+
+    //                     } else {
+    //                         // on the floor baby. In the round file. console.warn("renderOneItem: undefined message.", message);
+    //                     }
+    //                 }
+    //             }
+    //         });
+    //     }
+    //     else {
+    //         //console.log("renderOneItem: Master not loaded: ", master, " mapkey: ", mapkey, " batchInfo: ", batchInfo)
+    //     }
+    //     // send a test message to the iFrame.
+    //     // let's only send this once.
+    //     if (loaded && !initialMessageSent) {
+    //         // const saymore = "this is coming from master: " + master
+    //         // const testMessage = { type: 'TEST_MESSAGE', content: 'Hello from parent! to frame' + saymore };
+    //         // // The iframe should get it eventually.
+    //         // const anaux = oct.GetAuxLeafStatus(oct.NoTld(master));
+    //         // if (!anaux) {
+    //         //     console.warn("renderOneItem: no aux for master: ", master, " batchInfo: ", props.batchInfo)
+    //         // } else 
+    //         // we have an aux
+    //         const anAux = aux
+    //         {
+    //             if (oct.NoTld(master) !== master) {
+    //                 console.warn("renderOneItem: master master has TLD: ", oct.NoTld(master), " aux.master: ", anAux.wholeMaster)
+    //             }
+    //             const ourReply: messes.Greetings = {
+    //                 to: oct.NoTld(master),
+    //                 from: oct.NoTld(master) + "-from-frame",
+    //                 type: "greetings",
+    //                 sessionId: "none",
+    //                 message: "Hello from parent. We hear you're Loaded. Send me a glb or a gltf",
+    //                 aux: anAux
+    //             }
+    //             // goes through the pub sub even though we're right here.
+    //             // why? sub.publish(oct.NoTld(master) + "-to-frame", ourReply);
+    //         }
+    //         // console.log("renderOneItem: sent test message to iframe: master: ", master, " mapkey: ", mapkey, " batchInfo: ", batchInfo, " message: ", ourReply)
+    //         setInitialMessageSent(true);
+    //     }
+    //     else {
+    //         // console.log("renderOneItem: iframe not loaded yet, cannot send message: master: ", master, " batchInfo: ", batchInfo)
+    //     }
+
+    //     return () => {
+    //         sub.unsubscribe(oct.NoTld(master) + "-to-frame");
+    //     };
+    // }, [loaded]);
+
+
+
+// function processMessageFromFrame(/*this: Window,*/ evt: MessageEvent<any>) {
+
+//   if (evt.data as frameUtils.LoadedMessageFromChild) {
+//     let msg = evt.data as frameUtils.LoadedMessageFromChild // this doesn't work. It passes everyting
+//     if (msg.type === "LoadedMessageFromChild") {
+//       console.log("MetaMain got LoadedMessageFromChild ", msg)
+//     } else {
+//       // console.log("MetaMain got unknown LoadedMessageFromChild type ", msg.type, msg)
+//     }
+//   } else {
+//     // console.log("MetaMain message unknown ")
+//   }
+
+//   // var message;
+//   // // if (evt.origin !== "https://robertnyman.com") {
+//   // // 	message = "You are not worthy";
+//   // // }
+//   // // else {
+//   // 	message =  evt.data + " from " + evt.origin;
+//   // // }
+//   // // document.getElementById("received-message").innerHTML = message;
+//   // console.log("MetaMain got a message ", message, evt)
+// }
+
+// if (window.addEventListener) {
+//   // For standards-compliant web browsers
+//   window.addEven tListener("message", processMessageFromFrame, false);
+// }
+// else {
+// 	window.attachEvent("onmessage", displayMessage);
+// }
+
+// export function TexturedBox() {
+
+//   const ppp = "/starmaps/stars.jpeg"
+
+//   const texture = useLoader(TextureLoader, ppp) //textureImage)
+
+//   return (
+//     <mesh>
+//       {/* <boxBufferGeometry args={[999, 999, 999]} /> */}
+//       <Box args={[999, 999, 999]} />
+//       <meshStandardMaterial map={texture} side={BackSide} />
+//     </mesh>
+//   );
+// }
+
+
+    // useEffect This is how we maintain the event listener that get's the messages from ALL the iframes.
+    // Why is this here? It's dumb and elaborate.
+    // There's only one and it should be in the bridge. (thought I was gonna s)
+
+    // We need to have a single even listener that gets the messages from all the iframes and then dispatches them to the correct iframe based on the master name.
+    // this is the one and only global event listener for all the iframes. 
+    // It will get the messages from the iframes and then dispatch them to the correct iframe based on the master name.
+    // this object knows it's BatchInfo and to it's aux and name.
+    // this is the proper way to register a handler for the message event, they say. 
+    // useEffect(() => {
+
+    //     window.addEventListener("message", handleOneFrameMessageHandler);
+    //     return () => {
+    //         // don't we unhook this here? I think we do.
+    //         window.removeEventListener("message", handleOneFrameMessageHandler);
+    //     };
+    // }, []); // empty dependency array means this effect runs once on mount and cleans up on unmount. ok
+
+
+
+
+
+// This is the singleton subscribe. This is NOT where several entities can subscribe to the same topic. 
+// We could do this with the other one, and we could make mistakes.
+
+// We use this for iFrames to have a message bus. Note that the "T" for the messages is the
+// minimal base class for internal messages.
+// It's not like subscribing to a list or a data structure. It's more like where a server has a domain name or an address 
+// and we all send it commands and messages.
+// It's a singleton subscribe. One thing subscribes per topic.
+
+type localMapItem<T> = {
+    callback: (message: T, err: null | Error) => any
+}
+
+// Do we really need the error?
+
+// from subscriptionId to localMapItem
+let sessionMap = new Map<string, localMapItem<any>>()
+
+// If you do this twice the first one gets washed away.
+// If you're not the guy for these messages, and you subscribe anyway, you could be totally screwing someone else up. 
+// So, be careful. This is a singleton subscribe. It's not like subscribing to a list or a data structure.
+// I would like to cap this, Go rules. Nobody was using the return.
+export function subscribe<T>(subscriptionId: string, cb: (message: T, err: null | Error) => any) { //: localMapItem<T> | undefined {
+    let found: localMapItem<T> | undefined = sessionMap.get(subscriptionId)
+    if (found === undefined) {
+        let found: localMapItem<T> = {
+            callback: cb
+        }
+        sessionMap.set(subscriptionId, found)
+    } else {
+        // replace the callback
+        found.callback = cb
+    }
+    return found
+}
+
+export function publish<T>(subscriptionId: string, message: T) {
+    const found = sessionMap.get(subscriptionId)
+    if (found !== undefined) {
+        let cb = found.callback
+        setTimeout(() => {          // in a different goroutine!
+            cb(message, null)
+        }, 0) // right now, asap.
+    } else {
+        console.log('PubSubSimple publish: no subscriber found for', subscriptionId, message)
+    }
+}
+
+// Remove is called when a component is unmounted. Prevent leaks.
+export function unsubscribe(subscriptionId: string) {
+
+    const found = sessionMap.get(subscriptionId)
+    if (found !== undefined) {
+
+
+        
+        // console.log('PubSubSimple unsubscribe', subscriptionId)
+        sessionMap.delete(subscriptionId)
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  // out on the mainland we just want to be able to package up publish and get it across the bridge.
+
+    // so that's the local subscribe.
+    // Here's the remote subscribe. 
+    // var bridgeMessage: messes.MessageBaseClass = {
+    //     to: key,
+    //     from: who + "_bridge_8vK2x9mQ4pW7zY1bN3fH5jDc",
+    //     cmd: "xxx1",
+    //     magic Number: 34.43346553 660816,
+    //     args: [who]
+    // }
+    // // this goes across the bridge. to the mainland.
+    // window.parent.postMessage(bridgeMessage, '*');
+
+
+
+
+
+
+
+    // here's what happens at the other end. 
+// This has to be the function that is running on the mainland:
+// it has to get the key and status across the bridge.
+// this will be called by the mainland pulish to get the status across with it's key and status.
+
+function mainlandBridgeMessageHandler<T>(key: string, status: T, err: Error = new Error("")) {
+
+    var msg: messes.MessagePublishClass<T> = {
+        to: key,
+        from: "",
+        cmd: "execute_thePublish",
+        magicNu mber: 34.4334655366 0816,
+        args: [],
+        status: status,
+        err: err
+    }
+    window.postMessage(msg, '*');
+}
+
+
+
+
+
+// type XXPubSubBridgeGenericMessage<T extends messes.MessageBaseClass> = {
+
+//     // to: string;          // for routing to the correct recipient
+//     // from: string;        // for identifying the sender
+//     // type: string;       //  // is this the same as "cmd"? for routing by type. 
+//     // sessionId: string;   //  for routing reply messages
+
+//     key: string,
+//     status: T,
+//     err: Error
+// }
+
+// // we're going to need another map.
+
+
+
+// BridgeMessageHandler deals with messages coming from the mainland.
+// This must be set has the handler (by someone). Often we see this done in the useEffect of a component. But it can be done anywhere.
+// Why don't we just do it in here, right now? 
+// export function BridgeMessageHandler(event: MessageEvent) {
+
+//     console.log("BridgeMessageHandler event: ", event)
+//     const data = event.data;
+//     const baseMessage = messes.ensureMessageBaseClass(data)
+//     if (baseMessage === null) {
+//         console.log("BridgeMessageHandler: not a valid message", data)
+//         return;
+//     }
+//     // we have a valid message. 
+//     // we want to call the callback that was registered for this key.
+//     if (baseMessage.cmd === "execute_thePublish") {
+//         // we have a valid message. 
+//         const publishCommand = baseMessage as messes.MessagePublishClass<any>
+//         // we want to call the callback that was registered for this key.
+//         // and we shall. 
+//         const key = publishCommand.to;
+//         const status = publishCommand.status;
+//         const err = publishCommand.err;
+//         // it's simple as this. 
+//         publish(key, status, err);
+//         return
+//     } else {
+//         console.log("BridgeMessageHandler: not a valid command", baseMessage.cmd)
+//         return
+//     }
+// }
+
+
+
+
+
+
+// Send xxx  Message.ts  I have tried to get rid of this but the
+// sync keeps bring it back. It is smarter that I. I surrender.
+
+// Go see PubSibBridge where reality actually happens.
+
+// I could have sworn that I changed the name of this file to an "md" file. 
+
+// ** trying to invent a general system for passing messages, and pubsub, 
+// and rpc between iFRames and 'parent' windows and in general. 
+
+// import { useEffect } from "react";
+
+// don't bother trying to change the name of this file. lol. The ts-lib sync scrips will screw you up.
+// 
+// Ignore the title here. I just need a place to think and try some code.
+
+// When an iFrame (or an island as I like to call them) subscribes to a topic someone has to tell the mainland
+// and use a bridge to carry those messages across. I think I solved this all in my head last night in my head. 8/1/26
+
+// I can't use the parent/child terminology because the islands have embassies on the mainland and the mainland has embassies on the islands.
+// It gets confusing fast, and I'm weird.
+
+// It's worse. The islands need general subscriptions, not just simpletons. Do they?
+
+// The first part is where an AuxGroupRenderer wants to subscribe to all the GLV update messages for all islands. NOT.
+// I take that back.
+// Each AuxGroup subscribes to the ONE island they care about.
+// When the island publishes, there's a custom pubsub called a bridge that takes the message across the bridge
+// and then republishes it at the mainland. The mainland then delivers it to the aux group renderer.
+// The aux group renderer then updates the aux state.
+
+// This means the bridge has to know about EVERY island. The islands have to register with the mainland as they come online.
+// Easier yet, the islands forward every subscription to the mainland always.
+// This means the unsubscriptions should also be forwarded across to the mainland.
+
+// The other half is when the island wants to subscribe.
+// Publishers who don't find destinations should check the bridge and see if there's a destination for that island.
+// If there is, the bridge will take the message across and republish it at the island.
+// E.g., an island will want to subscribe to 'entry' messages for when someone/thing enters the island space.
+// Then the island can send some responses or reactions.
+
+// I'm going to write this bridge right here, in this file. Test it somewhere. 
+// Note that these same files will appear on both sides.
+
+// On the island I want to write 
+
+// can I import my own damn self? No. I'll have to make real files and clean it up later.
+// When making a file in a folder that's getting synced you can never rename it or move it. The sync script will delete or resconstitute it. 
+// So, I have to make a file in the src/knotfree-ts-lib/avatars folder and then import it here.
+// import * as bridge from './'; 
+
+// nevermind. I'm writing it in this stupid avatars folder here.  
+
+// export interface bridge {
+//     subscribe: (topic: string, islandName: string, callback: (message: any, err?: Error) => void) => void;
+//     publish: (topic: string, islandName: string, message: any) => void;
+//     unsubscribe: (topic: string, islandName: string) => void;
+// }
+
+// const thisIslandAddress = "testmain-2n0u4w2p"
+
+// bridge.subscribe("proximity", "island1", (message: any, err: Error) => {
+//     // do something with the message. 
+//     console.log("island1 got an ", message)
+// });
+
+
+// this is on the ISLAND ISLAND ISLAND ISLAND ISLAND side. 
+// this is on the ISLAND ISLAND ISLAND ISLAND ISLAND side. 
+// this is on the ISLAND ISLAND ISLAND ISLAND ISLAND side. 
+// this is on the ISLAND ISLAND ISLAND ISLAND ISLAND side. 
+
+// Data can be a string, object, array, etc.
+// const messageData = { type: "SUCCESS", payload: "Form submitted!" };
+
+// // Target a specific origin for security
+// const targetOrigin = "https://your-parent-domain.com"; 
+
+// window.parent.postMessage(messageData, targetOrigin); // will get a message sent someplace on the mainland.
+    
+// also on the island, at the embasy, we can listen for messages from the mainland.
+
+    // useEffect(() => {
+    //     // Add listener on mount
+    //     window.addEvent Listener("message", handleMessageOrangeWest);
+    //     // Clean up listener on unmount to prevent memory leaks
+    //     return () => window.removeEventListener("message", handleMessageOrangeWest);
+    // }, []); // Empty array ensures this runs once on mount
+
+// where handleMessageOrangeWest is a function. I'm not sure if it's best to 
+// use the "[]" or else just registered the listener once and never remove it. I think the latter is best.
+
+// This is on the MAINLAND  MAINLAND  MAINLAND  MAINLAND side.
+// This is on the MAINLAND  MAINLAND  MAINLAND  MAINLAND side.
+// This is on the MAINLAND  MAINLAND  MAINLAND  MAINLAND side.
+// This is on the MAINLAND  MAINLAND  MAINLAND  MAINLAND side.
+
+// This will absolutely get messages from the isLand. 
+
+    // useEffect This is how we maintain the event listener that get's the messages from ALL the iframes.
+    // We need to have a single even listener that gets the messages from all the iframes and then dispatches them to the correct iframe based on the master name.
+    // this is the one and only global event listener for all the iframes. 
+    // It will get the messages from the iframes and then dispatch them to the correct iframe based on the master name.
+    // this object knows it's BatchInfo and to it's aux and name.
+    // this is the proper way to register a handler for the message event, they say. 
+    // useEffect(() => {
+    //     window.addEvent Listener("message", x);
+    //     return () => {
+    //         // don't we unhook this here? I think we do.
+    //         window.removeEventListener("message", handleOneFrameMessageHandler);
+    //     };
+    // }, []); // empty dependency array means this effect runs once on mount and cleans up on unmount. ok
+
+// I find it slightly creepy that the event listener is just the word 'message'. However, other event listyinets are for stuff like key down seems more specific. Oh well.
+// 
+// This is gets a firehose of messages. All the iFrames are sending messages to the mainland. 
+// But, also the debuggers are are all up in there.
+
+// For the mainland to send a message TO the island, it needs to know the iframe's contentWindow
+// the contentWindow is an HTMLIFrameElement property and is absolutely in the DOM and 
+// on the mainland, but that seems to be how it works. 
+// The contentWindow is the window object of the iframe, and we can use postMessage on it to send messages to the iframe. 
+// (that's my little brother speaking, he likes to repeat everything I say and make it sound like it was his idea and that it's really really profopund.)
+// He is pretty quick on the uptake though. And he seemed to have read everything. 
+// his name is Copilot. I call him Copilot Tracey Wootton.
+

@@ -13,7 +13,7 @@ import * as utils from 'knotfr ee-ts-lib/src/utils'  aka import {utils} from 'kn
 import * as saved from './SavedStuff'
 import * as registry from './ChangeRegistry'
 
-import * as types from "./knotfree-ts-lib/types";
+import * as types from "./knotfree-ts-lib/KnotTokenStack/types";
 
 
 import * as app from "./App";

@@ -1,7 +1,7 @@
 import { assert } from 'console'
-import * as client from '../client'
-import * as packets from '../packets'
-import * as utils from '../utils'
+import * as client from '../KnotTokenStack/client'
+import * as packets from '../KnotTokenStack/packets'
+import * as utils from '../KnotTokenStack/utils'
 import { buffer } from 'stream/consumers'
 
 // npx tsx src/test/testKnotConnect.ts

@@ -1,12 +1,10 @@
 
-import * as client from '../client'
-import * as knothttp from '../httpClient'
+import * as client from '../KnotTokenStack/client'
+import * as knothttp from '../KnotTokenStack/httpClient'
 import * as fs from 'fs'
-import * as utils from '../utils'
-
+import * as utils from '../KnotTokenStack/utils'
 
 // npx tsx src/test/socketFetch.ts
-
 
 {
 const data = fs.readFileSync("src/test/isWholeReplyQuestion.txt")

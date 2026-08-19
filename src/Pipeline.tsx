@@ -2,7 +2,7 @@
 
 //import * as nacl from 'tweetnacl-ts'
 import { Buffer } from 'buffer'
-import * as utils from './knotfree-ts-lib/utils'
+import * as utils from './knotfree-ts-lib/KnotTokenStack/utils'
 import * as app from './App'
 //import * as saved from './SavedStuff'
 import { PublishArgs, PublishReply } from './publish-types'

@@ -3,10 +3,10 @@ import React, { FC, ReactElement, useEffect } from 'react'
 import useFetch from "react-fetch-hook";
 
 
-import * as types from './knotfree-ts-lib/types'
+import * as types from './knotfree-ts-lib/KnotTokenStack/types'
 import * as saved from './SavedStuff'
 
-import * as utils from './knotfree-ts-lib/utils'
+import * as utils from './knotfree-ts-lib/KnotTokenStack/utils'
 
 import { NameCard } from './NameCard'
 

@@ -85,8 +85,8 @@ console.log("---   ---   ---   ---   ---   ---    ")
 console.log("part 3   ---   ---   ---   ---    ")
 
 // now let's actually do the tests
-import * as knothttp from '../httpClient'
-import * as packets from '../packets'
+import * as knothttp from '../KnotTokenStack/httpClient'
+import * as packets from '../KnotTokenStack/packets'
 
 const httpMon = knothttp.NewDefaultHttpMonger()
 var messagesReceivedCount = 0

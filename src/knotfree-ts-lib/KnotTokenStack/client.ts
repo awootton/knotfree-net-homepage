@@ -200,7 +200,7 @@ export function Startup(params: ConnectInfo) {
     params.private_client_not_for_use.setNoDelay(true)
     // params.client.setKeepAlive(true)
 
-    console.log("Startup", params.host, params.port)
+    console.log("Startup starting with", params.host, params.port)
     // params.private_client_not_for_use.connect(params.port, params.host)
 
     params.private_client_not_for_use.on('connect', () =>{

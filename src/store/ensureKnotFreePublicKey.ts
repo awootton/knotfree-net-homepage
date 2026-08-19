@@ -1,5 +1,5 @@
 
-import {types} from '../knotfree-ts-lib'
+import {types} from '../knotfree-ts-lib/KnotTokenStack'
 import * as app from '../App'
 
 

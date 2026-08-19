@@ -9,7 +9,7 @@ import * as pipeline from './Pipeline';
 
 import './homepage.css'
 
-import { getFreeToken } from './knotfree-ts-lib'
+import { getFreeToken } from './knotfree-ts-lib/KnotTokenStack/'
 
 import { CopyToClipboard } from 'react-copy-to-clipboard'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
@@ -21,10 +21,10 @@ import * as app from './App'
 
 import * as saved from './SavedStuff'
 import * as helpers from './Utils-tsx'
-import * as utils from './knotfree-ts-lib/utils'
+import * as utils from './knotfree-ts-lib/KnotTokenStack/utils'
 
 import * as registry from './ChangeRegistry'
-import * as types from './knotfree-ts-lib/types'
+import * as types from './knotfree-ts-lib/KnotTokenStack/types'
 import * as pubtypes from './publish-types'
 
 import * as allMgr from './store/allThingsConfigMgr'

@@ -14,12 +14,12 @@ import { Tooltip } from 'react-tooltip'
 import './ThingCard.css' // what's another way to get the css applied in here?
 
 import * as saved from './SavedStuff'
-import * as utils from './knotfree-ts-lib/utils'
+import * as utils from './knotfree-ts-lib/KnotTokenStack/utils'
 import * as storeutils from './store-utils'
 
 import * as  utilsTsx from './Utils-tsx';
 
-import * as types from './knotfree-ts-lib/types'
+import * as types from './knotfree-ts-lib/KnotTokenStack/types'
 import * as pubtypes from './publish-types';
 import * as pipeline from './Pipeline';
 import * as app from './App'

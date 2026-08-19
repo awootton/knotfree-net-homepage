@@ -211,7 +211,7 @@ export const Things: FC<Props> = (props: Props): ReactElement => {
     return (
         <Box className="container"  >
 
-            <div>The styles in here are highly broken and I'm not working on it right now.</div>
+            {/* <div>The styles in here are highly broken and I'm not working on it right now.</div> */}
 
             {/* <div className="title" >
 

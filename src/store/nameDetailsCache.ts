@@ -1,5 +1,5 @@
 
-import * as types from '../knotfree-ts-lib/types'
+import * as types from '../knotfree-ts-lib/KnotTokenStack/types'
 import * as pipeline from '../Pipeline'
 import * as app from '../App'
 import { WatchEventType } from 'fs'

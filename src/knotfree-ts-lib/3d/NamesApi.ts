@@ -3,6 +3,11 @@
 import * as utils from './utils';
 import * as atwdns from './DnsTypes'
 
+// This is an API to a names API over at knotfree.net
+// I love old school text command line interfaces.
+// When we need some bits just use Base64.
+// You know, wget -qO- "http://get-unix-time.knotfree.io/get/pubk" actually works. 
+
 // the help commend returns a list of commands, and the get-unix-time command returns the current unix time.
 // [bulk option] add key kv pairs
 // [delete] delete a name
@@ -27,13 +32,13 @@ export type LookupNameExistsReturnType = {
     Owner: string
 }
 
-let server = "https://knotfree.net"
+let server = "https://knotfree.net"    // You can literally get you own names with this API if you have the right token. 
 // server = "http://knotfree.com:8085" // for local testing
 server = atwdns.knotfreeServer
 
 // sends a command to the knotfree.io API, which will execute it on the server. 
 export async function sendNameserviceCommand(command: string, domainName: string, keyPair: { pubk: string, priv: string }): Promise<[string,Error|null]> {
-    let nonce = utils.randomString(24)
+    let nonce = utils.RandomString(24)
     // console.log('reserve new nonce', nonce)
 
     // Fetch public key from API. Every time?

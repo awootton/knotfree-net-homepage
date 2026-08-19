@@ -3,9 +3,9 @@
 import { ok, strictEqual, equal } from 'node:assert';
 
 
-import * as knothttp from '../httpClient'
-import * as types from '../types'
-import * as packets from '../packets'
+import * as knothttp from '../KnotTokenStack/httpClient'
+import * as types from '../KnotTokenStack/types'
+import * as packets from '../KnotTokenStack/packets'
 
 // npx tsx src/test/testHttpClient.ts
 

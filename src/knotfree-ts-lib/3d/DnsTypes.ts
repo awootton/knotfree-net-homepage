@@ -47,6 +47,8 @@ export function SetKnotfreeServer(server: string) {
 	knotfreeServer = server
 }
 
+// always turn this OFF SetKnotfreeServer(knotFreeDotNet) // dev local against prod. 
+
 export var inHTTPSmode = false
 if (typeof window !== "undefined") {
 	if (window.location.href.startsWith("https://")) {
